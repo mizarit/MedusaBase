@@ -11,35 +11,23 @@ if ($count > 0) {
 <?php } ?>
 <div id="sidebar-left" class="sidebar">
   <div id="sidebar-left-inner" class="sidebar-inner" style="overflow:scroll;">
-    <ul>
-      <li><i class="fa fa-user"></i> <?php echo $user->firstName; ?> <?php echo $user->lastName; ?>
-        <?php if ($iOS) { ?>
-          <i class="fa fa-remove" style="position: absolute;right:0;" onclick="toggleSidebar('sidebar-left');"></i>
-        <?php } ?>
+    <ul id="sidebar-nav">
+      <li class="main-item"><i class="fa fa-user"></i> Mijn account
+        <i class="fa fa-remove" style="position: absolute;right:<?php echo $iOS? '-0.9em':'0'; ?>;top:0;border:none;" onclick="toggleSidebar('sidebar-left');"></i></li>
 
-      </li>
+      <li class="disabled-item" onclick="setActive(this);goPage(1);toggleSidebar('sidebar-left');"><i class="fa fa-users"></i> Klanten</li>
+      <li class="disabled-item" onclick="setActive(this);goPage(2);toggleSidebar('sidebar-left');"><i class="fa fa-calendar"></i> Afspraken</li>
+      <li class="disabled-item" onclick="setActive(this);goPage(3);toggleSidebar('sidebar-left');"><i class="fa fa-wrench"></i> Werkbonnen</li>
+      <li class="disabled-item" onclick="setActive(this);goPage(6);toggleSidebar('sidebar-left');"><i class="fa fa-car"></i> Reistijden</li>
+      <li class="disabled-item" onclick="setActive(this);goPage(7);toggleSidebar('sidebar-left');"><i class="fa fa-clock-o"></i> Urenregistratie</li>
+      <li class="disabled-item" onclick="setActive(this);goPage(8);toggleSidebar('sidebar-left');"><i class="fa fa-photo"></i> Situatiefoto's</li>
+      <li class="disabled-item" onclick="setActive(this);goPage(9);toggleSidebar('sidebar-left');"><i class="fa fa-euro"></i> Kassa</li>
+      <li class="disabled-item" onclick="setActive(this);goPage(10);toggleSidebar('sidebar-left');"><i class="fa fa-comment"></i> Notities</li>
+      <li onclick="setActive(this);goPage(5);toggleSidebar('sidebar-left');"><i class="fa fa-pencil-square-o"></i> Digitale handtekening</li>
+      <li onclick="setActive(this);goPage(4);toggleSidebar('sidebar-left');"><i class="fa fa-cogs"></i> Instellingen</li>
+      <li onclick="window.location.href=window.location.href;"><i class="fa fa-bug"></i> Verversen</li>
+      <li onclick="window.location.href='/main/debug?ju=<?php echo $user_id; ?>';"><i class="fa fa-bug"></i>Debugger</li>
     </ul>
-        <?php if($user->device=='android'){ ?>
-            <ul>
-            <li onclick="goPage(4);toggleSidebar('sidebar-left');"><i class="fa fa-cogs"></i> Instellingen</li>
-            </ul>
-        <?php } ?>
-    <ul>
-      <li>
-        <div style="position: relative;width:95%;" id="chat-input">
-          <form action="#" method="post" onsubmit="sendChat();return false;">
-            <input id="chat-text" autocomplete="off" type="text" style="margin:0;width:100%;font-size:1.2em;padding:0.3em 0.2em;border-radius:0.3em;">
-            <i id="chat-enter" style="position:absolute;width:auto;right:0;left:auto;float:none;display:inline;top:0.25em;font-size: 1.6em;color:#aaa;" class="fa fa-caret-square-o-down"></i>
-            <button type="submit" style="display:none;"></button>
-          </form>
-        </div>
-      </li>
-      <li style="height: auto;">
-        <div id="chat-stream">
-          <ul>
-          </ul>
-        </div>
-      </li>
-    </ul>
+
   </div>
 </div>

@@ -1,5 +1,5 @@
 body {
-    background:url(/img/stats-bkg.png);
+    background:#fff;
     padding: 0;
     margin: 0;
     width: 100%;
@@ -42,24 +42,17 @@ h3 {
 }
 
 #header {
-    background: rgb(43,193,240); /* Old browsers */
-    background: -moz-linear-gradient(top,  rgba(43,193,240,1) 0%, rgba(23,183,238,1) 100%); /* FF3.6+ */
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(43,193,240,1)), color-stop(100%,rgba(23,183,238,1))); /* Chrome,Safari4+ */
-    background: -webkit-linear-gradient(top,  rgba(43,193,240,1) 0%,rgba(23,183,238,1) 100%); /* Chrome10+,Safari5.1+ */
-    background: -o-linear-gradient(top,  rgba(43,193,240,1) 0%,rgba(23,183,238,1) 100%); /* Opera 11.10+ */
-    background: -ms-linear-gradient(top,  rgba(43,193,240,1) 0%,rgba(23,183,238,1) 100%); /* IE10+ */
-    background: linear-gradient(to bottom,  rgba(43,193,240,1) 0%,rgba(23,183,238,1) 100%); /* W3C */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2bc1f0', endColorstr='#17b7ee',GradientType=0 ); /* IE6-9 */
+    background: #f36518;
 
-    padding:0 0 0 0;
+    padding:0;
     position: fixed;
-    height: 2.6em;
+    height: 3.3em;
     top:0;
     width: 100%;
 }
 
 #main {
-    padding-top:5.3em;
+    padding-top:3.3em;
     width: 100%;
 }
 
@@ -188,56 +181,28 @@ button.delayed {
   outline: 0;
 }
 
-#graph {
-    width: 100%;
-    /*overflow: hidden;*/
 
-    background: rgb(33,182,238); /* Old browsers */
-    background: -moz-linear-gradient(top,  rgba(33,182,238,1) 1%, rgba(22,180,237,1) 100%); /* FF3.6+ */
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(1%,rgba(33,182,238,1)), color-stop(100%,rgba(22,180,237,1))); /* Chrome,Safari4+ */
-    background: -webkit-linear-gradient(top,  rgba(33,182,238,1) 1%,rgba(22,180,237,1) 100%); /* Chrome10+,Safari5.1+ */
-    background: -o-linear-gradient(top,  rgba(33,182,238,1) 1%,rgba(22,180,237,1) 100%); /* Opera 11.10+ */
-    background: -ms-linear-gradient(top,  rgba(33,182,238,1) 1%,rgba(22,180,237,1) 100%); /* IE10+ */
-    background: linear-gradient(to bottom,  rgba(33,182,238,1) 1%,rgba(22,180,237,1) 100%); /* W3C */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#21b6ee', endColorstr='#16b4ed',GradientType=0 ); /* IE6-9 */
-
-    -webkit-box-shadow: inset -2px -40px 27px -32px rgba(28,28,28,0.39);
-    -moz-box-shadow: inset -2px -40px 27px -32px rgba(28,28,28,0.39);
-    box-shadow: inset -2px -40px 27px -32px rgba(28,28,28,0.39);
-height: 12em;
+.button-1,
+.button-2,
+.button-3 {
+    font-size:1.8em;
+    padding: 0 0.5em;
+    border-radius:0.1em;
+    color: #fff;
 }
-.graph-bar {
-  /*width:2.4%;*/
-  position:absolute;
-  bottom:0;
-  background:#f36518;
-  height: 0;
-  
-  transition: all 1.2s;
-  transition-delay: 300ms;
+.button-1 {
+    background: #f36518 !important;
 }
 
-.graph-bar-flat {
-  height: 0 !important;
+.button-2 {
+    background: #0088cc !important;
 }
 
-#graph p {
-    text-align: center;
-    margin: 0;
-    font-size: 3em;
-    line-height:0.5em;
-    padding-top: 0.6em;
+.button-3 {
+    background: #17a6e2 !important;
 }
 
-#graph p span {
-    font-size: 0.5em;
-}
-#cell-distance, #cell-steps {
-    font-size: 1em !important;
-}
-#cell-distance {
-    font-weight: bold;
-}
+
 #sidebar-left {
     width:95%;
     position: fixed;
@@ -258,35 +223,51 @@ height: 12em;
 .sidebar ul {
     margin: 0;
     padding: 0;
-    border-bottom:#262b2e 2px solid;
-    margin-bottom:2em;
+    border-bottom:#262b2e 1px solid;
+    margin-bottom:3.2em;
 }
 
 .sidebar li {
     list-style: none;
-    border-bottom:#32373a 2px solid;
-    border-top:#262b2e 2px solid;
+    border-top:#262b2e 1px solid;
     height: 2.2em;
     line-height: 2.2em;
     font-size: 1.5em;
     margin:0;
-    padding:0 0 0 0.5em;
+    padding:0;
     font-weight: 400;
     text-shadow: 0.1em 0.1em #32373a;
-    background: #2a2f33 url(/img/sidebar-bkg.png);
     transition: background 0.1s;
 }
 
-.sidebar li.active-item {
-    background: #475057 url(/img/sidebar-bkg.png);
+.sidebar li.main-item {
+    background: #0088cc;
+}
+
+.sidebar li.main-item > i:first-child {
+  background: #17a6e2;
+}
+
+.sidebar li.active-item,
+.sidebar li.active-item i {
+    background: #f36518;
+}
+
+.sidebar li.disabled-item,
+.sidebar li.disabled-item i {
+    color: #999;
 }
 
 .sidebar li i {
     display:block;
     float:left;
-    width:1.5em;
+    width:2.5em;
+    height: 2.2em;
+    line-height: 2.2em;
     position:relative;
-    top:0.6em;
+    text-align: center;
+    margin-right: 0.5em;
+    border-right: #262b2e 1px solid;
 
 }
 #sidebar-right {
@@ -320,9 +301,8 @@ height: 12em;
     z-index:100;
 }
 .sidebar-inner {
-    border: #a1a1a1 1px solid;
     height: 100%;
-    background:url(/img/sidebar-bkg.png);
+    /*background:url(/img/sidebar-bkg.png);*/
 }
 #sidebar-left.sidebar-inner {
     border-radius: 0 1em 1em 0;
@@ -359,57 +339,38 @@ height: 12em;
     -moz-opacity: 0.5;
 }
 
-#page-1, #page-2, #page-3, #page-4 {
+#page-1, #page-2, #page-3, #page-4, #page-5, #page-6, #page-7, #page-8, #page-9, #page-10 {
   position: absolute;
   width:100%;
-  transition: all 0.7s;
+  transition: all 0.3s;
 }
 
 #page-1 {
-    -webkit-transform: translate(-100%,0);
-    -o-transform: translate(-100%,0);
-    -moz-transform: translate(-100%,0);
-    transform: translate(-100%,0);
-}
-
-#page-2, #page-3, #page-4 {
-    -webkit-transform: translate(100%,0); /* iOS makes a mess with the zoom when translated to the right, even if overflow hidden is used on the parent */
+    -webkit-transform: translate(100%,0);
     -o-transform: translate(100%,0);
     -moz-transform: translate(100%,0);
     transform: translate(100%,0);
 }
 
-.iOS #page-2, .iOS #page-3, .iOS #page-4 {
+#page-2, #page-3, #page-4, #page-5, #page-6, #page-7, #page-8, #page-9, #page-10 {
+    -webkit-transform: translate(100%,0); /* iOS makes a mess with the zoom when translated to the right, even if overflow hidden is used on the parent */
+    -o-transform: translate(100%,0);
+    -moz-transform: translate(100%,0);
+    transform: translate(100%,0);
+}
+/*
+.iOS #page-2, .iOS #page-3, .iOS #page-4, .iOS #page-5, .iOS #page-6, .iOS #page-7, .iOS #page-8, .iOS #page-9, .iOS #page-10 {
     -webkit-transform: translate(-100%,0);
     -o-transform: translate(-100%,0);
     -moz-transform: translate(-100%,0);
     transform: translate(-100%,0);
-}
+}*/
 
-#page-1.active, #page-2.active, #page-3.active, #page-4.active {
+#page-1.active, #page-2.active, #page-3.active, #page-4.active, #page-5.active, #page-6.active, #page-7.active, #page-8.active, #page-9.active, #page-10.active {
   transform: translate(0,0);
   -webkit-transform: translate(0,0);
   -o-transform: translate(0,0);
   -moz-transform: translate(0,0);
-}
-
-
-#entrycode {
-  margin: 0 auto;
-  width: 26em;
-  text-align: center;
-}
-
-#entrycode input {
-  width: 2em;
-  height: 3em;
-  line-height: 1em !important;
-  text-align: center;
-  font-size: 1.7em;
-  padding: 0;
-  background:#20bbef;
-  border: #fff 2px solid;
-    color:#fff;
 }
 
 #form-errors {
@@ -424,13 +385,6 @@ height: 12em;
     font-size: 1em;
     font-weight: bold;
     text-transform: uppercase;
-}
-
-#page-1,
-#page-2,
-#page-3,
-#page-4 {
-    background:url(/img/stats-bkg.png);
 }
 
 .cell {
@@ -524,256 +478,8 @@ font-size:1.5em;
     background-size: auto 100% !important;
 }
 
-.race-track {
-    position: relative;
-    height: 4.5em; /* 4.5 x teams */
-    background: #17a6e2;
-    -webkit-box-shadow: inset -2px -40px 27px -32px rgba(28,28,28,0.39);
-    -moz-box-shadow: inset -2px -40px 27px -32px rgba(28,28,28,0.39);
-    box-shadow: inset -2px -40px 27px -32px rgba(28,28,28,0.39);
-    width:100%;
-    overflow:hidden;
-}
-
-#race-track-2 {
-    height: 9em;
-}
-
-.checkerboard {
-    position: absolute;
-    right: 0;
-    background: url(/img/checkerboard.png) repeat-y;
-    background-size: 100% auto;
-    width: 2em;
-    height: 9em; /* 4.5 x teams */
-}
-
-.startline {
-    transform:rotate(270deg);
-    -webkit-transform:rotate(270deg);
-    transform-origin:right top 0;
-    -webkit-transform-origin: right top 0;
-    font-size:1.5em;
-    text-transform: uppercase;
-    position: absolute;
-    border-bottom: #fff 3px solid;
-    color: #fff;
-    width: 6em; /* 3 x teams */
-    left:-6em; /* -3 x teams */
-    text-align: center;
-    font-weight: bold;
-}
-
-#race-track-label-1,
-#race-track-label-2,
-#race-track-label-3,
-#race-track-label-4,
-#race-track-label-5,
-#race-track-team-label-1,
-#race-track-team-label-2,
-#race-track-team-label-3,
-#race-track-team-label-4,
-#race-track-team-label-5 {
-    font-size: 2.5em;
-    color: #fff;
-    font-weight: bold;
-    position: absolute;
-    left: 1em;
-    top: 0.2em;
-}
-
-#race-track-label-2,
-#race-track-team-label-2 {
-    top: 2em;
-}
-
-#race-track-label-3,
-#race-track-team-label-3 {
-    top: 3.9em;
-}
-
-#race-track-label-4,
-#race-track-team-label-4 {
-    top: 5.7em;
-}
-
-#race-track-label-5,
-#race-track-team-label-5 {
-    top: 7.5em;
-}
-
-#race-track-team-label-2 {
-    font-size: 1.5em;
-    line-height: 0.7em;
-    left: 1.7em;
-    top: 3.5em;
-}
-
-#race-track-bar-1,
-#race-track-bar-2,
-#race-track-bar-3,
-#race-track-bar-4,
-#race-track-bar-5,
-#race-track-team-bar-1 {
-    width: 100%;
-    height: 3.5em;
-    position: absolute;
-    left:1.9em;
-    top: 0.5em;
-}
-#race-track-bar-2 {
-    top: 5em;
-}
-#race-track-bar-3 {
-    top: 9.5em;
-}
-#race-track-bar-4 {
-    top: 14em;
-}
-#race-track-bar-5 {
-    top: 18.5em;
-}
-
-#race-track-inner-bar-1,
-#race-track-inner-bar-2,
-#race-track-inner-bar-3,
-#race-track-inner-bar-4,
-#race-track-inner-bar-5,
-#race-track-team-inner-bar-1 {
-    background: #5d0ddd;
-    width: 0%;
-    height: 3.5em;
-    float: left;
-}
-#race-track-inner-bar-2 {
-    background: #f36518;
-}
-#race-track-inner-bar-3 {
-    background: #11e133;
-}
-#race-track-inner-bar-4 {
-    background: #ab11a2;
-}
-#race-track-inner-bar-5 {
-    background: #1156ab;
-}
-
-#race-track-inner-bar-1,
-#race-track-inner-bar-2,
-#race-track-inner-bar-3,
-#race-track-inner-bar-4,
-#race-track-inner-bar-5,
-#race-track-team-inner-bar-1 {
-    -webkit-box-shadow: inset 0 -130px 39px -122px rgba(28,28,28,0.39);
-    -moz-box-shadow: inset 0 -130px 39px -122px rgba(28,28,28,0.39);
-    box-shadow: inset 0 -130px 39px -122px rgba(28,28,28,0.39);
-    transition: width 0.8s;
-}
-
-#race-track-bar-1 .closer,
-#race-track-bar-2 .closer,
-#race-track-bar-3 .closer,
-#race-track-bar-4 .closer,
-#race-track-bar-5 .closer,
-#race-track-team-bar-1 .closer {
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 0 1.5em 3.5em 0;
-    border-color: transparent #17a6e2 transparent;
-    float: left;
-    position: relative;
-    left: -1.45em;
-    top: -1px;
-}
-
 #page-1 {
     width: 100%;
-}
-
-#ranking {
-    margin: 0;
-    padding: 0;
-}
-
-#ranking li {
-    list-style: none;
-    padding: 0;
-    height: 3.4em;
-    display: block;
-    padding: 0.2em;
-    font-size: 1.2em;
-    margin-bottom: 0.1em;
-    position: relative;
-}
-
-#ranking li div {
-    position: absolute;
-    width: 85%;
-    height: 4em;
-    top: 0;
-    padding: 0.2em 0;
-}
-
-#ranking li div:first-child {
-    background: #fff;
-    opacity: 0.2;
-    -moz-opacity: 0.2;
-}
-
-#ranking li div:nth-child(3) {
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 4em 0 0 2em;
-    border-color: transparent transparent transparent #fff;
-    left: 85%;
-    margin-left: 0.25em;
-    opacity: 0.2;
-    -moz-opacity: 0.2;
-}
-
-#ranking li div:nth-child(2) img {
-    height: 4em;
-    display: block;
-    float: left;
-    margin-right: 0.6em;
-}
-
-#ranking li div:nth-child(2)  span:first-child {
-    height: 2.8em;
-    line-height:3em;
-    display: block;
-    float: left;
-    padding: 0 1em 0 0.5em;
-    font-size: 1.2em;
-    font-weight: bold;
-    width: 0.5em;
-}
-
-#ranking li div:nth-child(2)  span:nth-child(3) {
-    font-size: 1.7em;
-    font-weight: bold;
-}
-
-.team-counters {
-    margin: 0;
-    padding: 0;
-}
-
-.team-counters li {
-    list-style: none;
-    padding: 0;
-    background: #c00;
-    color: #fff;
-    text-align: center;
-    position: relative;
-    font-size: 2em;
-    line-height: 2em;
-    text-transform: uppercase;
-    margin: 0 0 0.2em 0;
-    font-weight: bold;
-    position: relative;
 }
 
 .team-counters li.team-1 {
@@ -796,167 +502,12 @@ font-size:1.5em;
     background: #873995;
 }
 
-.team-counters li span {
-    position: absolute;
-    top: 0.7em;
-    right: 0.7em;
-    line-height: 1em;
-}
-
-.team-counters li span img {
-    width: 1.5em;
-}
-
-#countdown {
-    color: #fff;
-    padding: 0.5em 0 0.1em 0;
-    background: rgb(51,187,238);
-    background: -moz-linear-gradient(left, rgba(51,187,238,1) 0%, rgba(13,164,227,1) 100%);
-    background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(51,187,238,1)), color-stop(100%,rgba(13,164,227,1)));
-    background: -webkit-linear-gradient(left, rgba(51,187,238,1) 0%,rgba(13,164,227,1) 100%);
-    background: -o-linear-gradient(left, rgba(51,187,238,1) 0%,rgba(13,164,227,1) 100%);
-    background: -ms-linear-gradient(left, rgba(51,187,238,1) 0%,rgba(13,164,227,1) 100%);
-    background: linear-gradient(to right, rgba(51,187,238,1) 0%,rgba(13,164,227,1) 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#33bbee', endColorstr='#0da4e3',GradientType=1 );
-}
-
-#countdown .counter {
-    background: rgb(87,189,233);
-    background: -moz-linear-gradient(top, rgba(87,189,233,1) 0%, rgba(53,178,229,1) 100%);
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(87,189,233,1)), color-stop(100%,rgba(53,178,229,1)));
-    background: -webkit-linear-gradient(top, rgba(87,189,233,1) 0%,rgba(53,178,229,1) 100%);
-    background: -o-linear-gradient(top, rgba(87,189,233,1) 0%,rgba(53,178,229,1) 100%);
-    background: -ms-linear-gradient(top, rgba(87,189,233,1) 0%,rgba(53,178,229,1) 100%);
-    background: linear-gradient(to bottom, rgba(87,189,233,1) 0%,rgba(53,178,229,1) 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#57bde9', endColorstr='#35b2e5',GradientType=0 );
-    border: #fff 2px solid;
-    width:1.5em;
-    height: 1.5em;
-    float:left;
-    font-size: 1.5em;
-    line-height: 1.5em;
-    font-weight: bold;
-
-}
-#countdown h2 {
-    color: #fff;
-    font-size: 2em;
-    font-weight: bold;
-    margin: 0;
-}
-#countdown p {
-    text-align: center;
-    margin: 0.3em 0 0.5em 0;
-}
-
-#container.results,
-#container.finish {
-    background: rgb(51,176,230);
-    background: -moz-linear-gradient(top, rgba(51,176,230,1) 0%, rgba(13,170,232,1) 100%);
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(51,176,230,1)), color-stop(100%,rgba(13,170,232,1)));
-    background: -webkit-linear-gradient(top, rgba(51,176,230,1) 0%,rgba(13,170,232,1) 100%);
-    background: -o-linear-gradient(top, rgba(51,176,230,1) 0%,rgba(13,170,232,1) 100%);
-    background: -ms-linear-gradient(top, rgba(51,176,230,1) 0%,rgba(13,170,232,1) 100%);
-    background: linear-gradient(to bottom, rgba(51,176,230,1) 0%,rgba(13,170,232,1) 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#33b0e6', endColorstr='#0daae8',GradientType=0 );
-    height:100%;
-}
-
-#container.finish h2,
-#container.results h2 {
-     color: #fff;
-     font-size: 2em;
-     font-weight: bold;
-     margin: 1em 0 0 0;
- }
-
-#container.finish h3,
-#container.results h3 {
-    color: #fff;
-    font-size: 1.5em;
-    font-style: normal;
-    margin: 0;
-}
-
-#container.finish #trophy img {
-    height: 16em;
-}
-
-#container.finish #trophy {
-    text-align: center;
-    height:16em;
-    position: relative;
-}
-
-#container.finish #trophy span {
-    position: absolute;
-    top: 1.8em;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    font-size: 3em;
-    font-weight: bold;
-    color: #c8c8c8;
-}
-
-
-#container.results #trophy img {
-    height: 8em;
-}
-
-#container.results #trophy {
-    text-align: center;
-    height:8em;
-    position: relative;
-    margin-top: 1em;
-}
-
-#container.results #trophy span {
-    position: absolute;
-    top: 1.8em;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #c8c8c8;
-}
-
-
-
-.team-counters .bullet {
-    position: absolute;
-    left: 0.2em;
-    top: 0.2em;
-    color: #000;
-    font-size: 1em;
-    font-weight: bold;
-    width: 1.6em;
-    height: 1.6em;
-    line-height: 1.6em;
-    background: url(/img/bullet.png);
-    background-size: 100%;
-    text-align: center;
-}
-
-.team-counters .stats {
-    position: absolute;
-    left: 4.6em;
-    top: 2.4em;
-}
-.results .team-counters li {
-    text-align: left;
-    padding-left: 2.3em;
-    height: 2em;
-    line-height: 1.5em;
-}
-
 #chat-stream {
     background: #666 url(/img/sidebar-bkg.png);
-    width: 96%;
-    height: 30em;
+    width: 100%;
+    height: 40em;
     padding: 0.1em;
-    margin: 0.1em 0 1em 0;
+    margin: 0.4em 0 1em 0;
     overflow: scroll;
 }
 
@@ -1001,26 +552,23 @@ input[type=checkbox] {
     display:none;
 }
 .checkbox:before {
-    content: "";
+    content: "\f204";
     display: inline-block;
-    width: 1em;
-    height: 1em;
+    font: normal normal normal 14px/1 FontAwesome;
+    font-size: inherit;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transform: translate(0, 0);
     vertical-align:middle;
-    background-color: #0088cc;
-    color: #f3f3f3;
-    text-align: center;
-    box-shadow: inset 0px 2px 3px 0px rgba(0, 0, 0, .3), 0px 1px 0px 0px rgba(255, 255, 255, .8);
-    border-radius: 0.1em;
+    font-size: 1.5em;
+
 }
 input[type=checkbox]:checked + .checkbox:before {
-    content: "\2713";
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, .2);
-    font-size: 1em;
-    font-weight: bold;
+    content: "\f205";
 }
 
 input[type=checkbox]:disabled + .checkbox:before {
-    background-color: #ccc;
     color: #eee;
 }
 

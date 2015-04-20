@@ -11,24 +11,18 @@ class MainActions extends Actions {
     $this->user_id = $user_id;
 
     if (isset($_POST['msg'])) {
-      //$push_api_key = 'AIzaSyBeMCQm0bMhd_BSn7Me1xbsFMDdgXxwl_A';
-      $push_api_key = 'AIzaSyD75eOpS3dk3zjjDi5fwYic5LwpVGaY7Ws';
-      $push_project = '567105785293';
+      $push_api_key = 'AIzaSyDtav4GVB3sPVn0jEPjGfUd7LQ6N56DJPQ';
+      $push_project = '665687130761';
 
-      if (strpos($_SERVER['SERVER_NAME'], 'mizar')) {
-        $test_users = array(6, 8);
-      }
-      else {
-        $test_users = array(9,10,11);
-      }
 
       $receiver_ids = array();
-      foreach ($test_users as $test_user) {
+      /*foreach ($test_users as $test_user) {
         $notifiers = Notifier::model()->findAllByAttributes(new Criteria(array('user_id' => $test_user, 'pushDevice' => 'android')));
         foreach ($notifiers as $notifier) {
           $receiver_ids[] = $notifier->pushId;
         }
-      }
+      }*/
+      $receiver_ids[] = 'APA91bGityQXiAOsNxX_8JuQnnXIFup2_Srhdf0Yl2dyJJFehENSVt4Yc3CkrrLfYA2qOroDU4ptPykWPiT-VnwXSY-DpVNffnzDBoD8kBACuJxmSQKuCBB8hFwXpBJOqc8tjVbjlV0CDju5LiBRMwiaLVdWHZS76A';
 
       if ($_POST['msgtype'] == 'message') {
         $data = array(
@@ -394,7 +388,7 @@ class MainActions extends Actions {
 
       $image = base64_decode($_POST['image']);
       file_put_contents(getcwd().'/img/signatures/'.$filename, $image);
-      $url = 'https://'.$_SERVER['SERVER_NAME'].'/img/signatures/'.$filename;
+      $url = 'http://'.$_SERVER['SERVER_NAME'].'/img/signatures/'.$filename;
       echo 'Bestand opgeslagen: <a target="_blank" href="'.$url.'">'.$url.'</a>';
       exit;
     }

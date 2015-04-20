@@ -19,7 +19,7 @@ $cache_version = '1.0.0'.time(); ?>
   <?php } ?>
   <script type="text/javascript" src="/js/mobile.js?t=<?php echo $cache_version; ?>"></script>
   <script type="text/javascript" src="/js/swipeable.js?t=<?php echo $cache_version; ?>"></script>
-  <script type="text/javascript" src="/js/countdown.min.js?t=<?php echo $cache_version; ?>"></script>
+  <script type="text/javascript" src="/js/signature.js?t=<?php echo $cache_version; ?>"></script>
   
   <title>Medusa</title>
 </head>

@@ -1,5 +1,12 @@
-function toggleSidebar(which)
+var inToggleSidebar = false;
+
+function toggleSidebar(which, force)
 {
+    if (inToggleSidebar && !force) return;
+
+    inToggleSidebar = true;
+    setTimeout(function() { inToggleSidebar = false; }, 700);
+
     if (which =='sidebar-left' && $('sidebar-right').hasClassName('active')) {
         $('sidebar-right').removeClassName('active');
     }
@@ -14,10 +21,11 @@ function toggleSidebar(which)
         $(which).addClassName('active');
     }
 
-    if (which =='sidebar-left') {
+    if (which =='sidebar-right') {
         refreshChat(null, true);
         //$('chat-count').style.display = 'none';
     }
+    //alert(which);
 }
 
 function clearSidebars()
@@ -35,45 +43,6 @@ function redirect(uri) {
 
 Event.observe(window, 'load', function() {
 
-    if (!iOS) {
-        var swipeMain = $('body');
-        var swipeMainObj = new Swipeable(swipeMain);
-
-        var w = $('body').getWidth();
-
-        // menu left
-        swipeMain.observe("swipe:right", function () {
-            p = swipeMainObj.lastStartX / (w / 100);
-
-            if (p < 20) {
-                if ($('sidebar-right').hasClassName('active')) {
-                    toggleSidebar('sidebar-right');
-                }
-                else if (!$('sidebar-left').hasClassName('active')) {
-                    toggleSidebar('sidebar-left');
-                }
-            }
-        });
-
-        var inChat = false;
-
-        if ($('sidebar-left')) {
-            var swipeSidebarLeft = $('sidebar-left');
-            var swipeSidebarLeftObj = new Swipeable(swipeSidebarLeft);
-            swipeSidebarLeft.observe("swipe:left", function () {
-                p = swipeSidebarLeftObj.lastStartX / (w / 100);
-                if (p > 80) {
-                    if ($('sidebar-left').hasClassName('active')) {
-                        if (!inChat) {
-                            toggleSidebar('sidebar-left');
-                        }
-                        inChat = false;
-                    }
-                }
-            });
-        }
-    }
-
     if(isAndroid) {
         var hasSound = Android.getSetting('sound')=="1";
         var hasVibrate = Android.getSetting('vibrate')=="1";
@@ -84,7 +53,7 @@ Event.observe(window, 'load', function() {
         $('notifications-vibrate').disabled = hasNotifications ? '' : 'disabled';
         $('notifications-sound').disabled = hasNotifications ? '' : 'disabled';
     }
-    
+
     if(isIos) {
         var iOS = new iOSWrapper;
         var hasSound = iOS.getSetting('sound')=="1";
@@ -96,37 +65,74 @@ Event.observe(window, 'load', function() {
         $('notifications-vibrate').disabled = hasNotifications ? '' : 'disabled';
         $('notifications-sound').disabled = hasNotifications ? '' : 'disabled';
     }
-    /*
+
+    var swipeMain = $('body');
+    var swipeMainObj = new Swipeable(swipeMain);
+
+    var w = $('body').getWidth();
+
+    // menu left
+    swipeMain.observe("swipe:right", function () {
+        p = swipeMainObj.lastStartX / (w / 100);
+
+        if (p < 20) {
+            if ($('sidebar-right').hasClassName('active')) {
+                toggleSidebar('sidebar-right');
+            }
+            else if (!$('sidebar-left').hasClassName('active')) {
+                toggleSidebar('sidebar-left');
+            }
+        }
+    });
+
+    if ($('sidebar-left')) {
+        var swipeSidebarLeft = $('sidebar-left');
+        var swipeSidebarLeftObj = new Swipeable(swipeSidebarLeft);
+        swipeSidebarLeft.observe("swipe:left", function () {
+            p = swipeSidebarLeftObj.lastStartX / (w / 100);
+            if (p > 80) {
+                if ($('sidebar-left').hasClassName('active')) {
+                    if (!inChat) {
+                        toggleSidebar('sidebar-left');
+                    }
+                    inChat = false;
+                }
+            }
+        });
+    }
+
+    var inChat = false;
+
      // menu right
      swipeMain.observe("swipe:left",function() {
-     p = swipeMainObj.lastStartX / (w /100);
+         p = swipeMainObj.lastStartX / (w /100);
 
-     //$('swipe-value').innerHTML = p;
-
-     if (p > 80) {
-     if( $('sidebar-left').hasClassName('active')) {
-     toggleSidebar('sidebar-left');
-     }
-     else if ( !$('sidebar-right').hasClassName('active')) {
-     toggleSidebar('sidebar-right');
-     }
-     }
+         if (p > 80) {
+             if( $('sidebar-left').hasClassName('active')) {
+                toggleSidebar('sidebar-left');
+             }
+             else if ( !$('sidebar-right').hasClassName('active')) {
+                toggleSidebar('sidebar-right');
+             }
+         }
      });
 
 
      if($('sidebar-right')) {
-     var swipeSidebarRight = $('sidebar-right');
-     var swipeSidebarRightObj = new Swipeable(swipeSidebarRight);
-     swipeSidebarRight.observe("swipe:right", function () {
-     p = swipeSidebarRightObj.lastStartX / (w / 100);
-     if (p < 20) {
-     if ($('sidebar-right').hasClassName('active')) {
-     toggleSidebar('sidebar-right');
+         var swipeSidebarRight = $('sidebar-right');
+         var swipeSidebarRightObj = new Swipeable(swipeSidebarRight);
+         swipeSidebarRight.observe("swipe:right", function () {
+             p = swipeSidebarRightObj.lastStartX / (w / 100);
+             if (p < 20) {
+                 if ($('sidebar-right').hasClassName('active')) {
+                     if (!inChat) {
+                         toggleSidebar('sidebar-right');
+                     }
+                     inChat = false;
+                 }
+             }
+         });
      }
-     }
-     });
-     }
-     */
 
     Event.observe($('chat-enter'), 'click', function() {
         inChat = true;
@@ -137,8 +143,6 @@ Event.observe(window, 'load', function() {
         sendChat();
     });
 
-
-
     if($('overlay')) {
         renderDataset();
     }
@@ -148,7 +152,7 @@ Event.observe(window, 'load', function() {
     }, 30000);
 
     //toggleSidebar('sidebar-left');
-
+    //goPage(4);
     refreshChat();
 });
 
@@ -201,11 +205,9 @@ function renderDataset()
 }
 function goPage(page_id, team_id)
 {
-
-
     $('container').scrollTo();
 
-    for(i=1;i<5;i++) {
+    for(i=1;i<11;i++) {
         if (page_id == i) {
             $('page-'+i).addClassName('active');
         }
@@ -215,17 +217,21 @@ function goPage(page_id, team_id)
     }
 
     if (page_id==1) {
-        $('back-button').hide();
-        if (iOS) {
-            $('menu-button').show();
-        }
+        //$('back-button').hide();
+        //$('menu-button').show();
     }
     else {
-        $('back-button').show();
-        if (iOS) {
-            $('menu-button').hide();
-        }
+        //$('back-button').show();
+        //$('menu-button').hide();
     }
+}
+
+function setActive(which)
+{
+    $$('#sidebar-nav li').each(function(s,i) {
+        $(s).removeClassName('active-item');
+    });
+    $(which).addClassName('active-item');
 }
 
 
