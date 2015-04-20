@@ -1,0 +1,87 @@
+#debug-container th {
+  text-align: left;
+  width: 7em;
+}
+#debug-container td,
+#debug-container th {
+  font-size: 1em;
+  word-wrap:break-word;
+  vertical-align: top;
+}
+#debug-container select {
+  font-size: 1em;
+  line-height: 1em;
+  margin-bottom: 0.2em;
+  width: 100%;
+  
+}
+h1 {
+  font-size: 3em;
+  font-weight: 800;
+  text-align: center;
+}
+h3 {
+  font-size: 2.5em;
+  font-weight: 800;
+  text-align: center;
+}
+h4 {
+  font-size: 2em;
+  font-weight: 800;
+  text-align: center;
+}
+#debug-container p,
+#debug-container li {
+  font-size: 2.5em;
+  word-wrap:break-word;
+}
+#debug-container pre {
+  font-family: Courier !important;
+  font-size: 12px !important;
+  font-weight: 800;
+}
+#debug-container button {
+  font-size: 1em;
+  font-weight: 300;
+  font-style: italic;
+  padding: 0.3em;
+  border-radius: 5px;
+  margin: 0 0.6% 1% 0;
+  background: #16dd36;
+  color: #fff;
+  width: 32%;
+}
+
+#debug-container button:last-child {
+    margin-right: 0;
+}
+#debug-container p button {
+  font-size: 1em;
+}
+#debug-container table {
+  background: #fff;
+  border: #cecece 1px solid;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 20px;
+  table-layout: fixed;
+  width: 100%;
+}
+#debug-container .more-info {
+  display: none;
+}
+#debug-container #overlay {
+    position: absolute;
+    left: 0;
+    top:0;
+    width:100%;
+    height: 100%;
+    background: #000;
+    z-index: 80;
+    transition: all 1s;
+    opacity: 0;
+}
+
+#debug-container #overlay.popup {
+    opacity: 0.5;
+}
