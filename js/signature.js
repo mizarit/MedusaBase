@@ -32,6 +32,8 @@ window.Signature = Class.create({
         var data = signatureSigner.signPad.toDataURL();
         var signatureData = data.replace(/^data:image\/(png|jpg);base64,/, "");
 
+        Workorder.saveSignature(signatureData);
+        /*
         new Ajax.Request('/main/signature', {
             parameters: {
                 image: signatureData
@@ -42,6 +44,7 @@ window.Signature = Class.create({
             }
 
         });
+        */
     },
 
     signCap: function(o)

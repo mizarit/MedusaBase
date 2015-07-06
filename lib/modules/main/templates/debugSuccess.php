@@ -69,7 +69,7 @@
     <button <?php if(!isset($_SESSION['isIos']) || !$_SESSION['isIos']) echo ' disabled="disabled" style="background:#cccccc;"'; ?> id="btn-iOS-notifications" onclick="handleiOSNotifications();">Notificaties</button><br>
     
     <form action="#" method="post" id="frm-iOS">
-    <textarea disabled="disabled" name="msg-iOS" id="msg-iOS" cols="40" rows="4" style="width:97%;margin: 0 1%;"><?php echo isset($_POST['msg'])?$_POST['msg']:''; ?></textarea><br>
+    <textarea <?php if(!isset($_SESSION['isIos']) || !$_SESSION['isIos']) echo ' disabled="disabled" style="background:#cccccc;"'; ?> name="msg-iOS" id="msg-iOS" cols="40" rows="4" style="width:97%;margin: 0 1%;"><?php echo isset($_POST['msg'])?$_POST['msg']:''; ?></textarea><br>
     <input type="hidden" name="msgtype-iOS" id="msgtype-iOS" value="message">
     <button type="button" <?php if(!isset($_SESSION['isIos']) || !$_SESSION['isIos']) echo ' disabled="disabled" style="background:#cccccc;"'; ?> onclick="$('frm-iOS').submit();">Bericht verzenden</button>
     <button type="button" <?php if(!isset($_SESSION['isIos']) || !$_SESSION['isIos']) echo ' disabled="disabled" style="background:#cccccc;"'; ?> onclick="$('msgtype-iOS').value='payload';$('iOS').submit();">Payload verzenden</button>

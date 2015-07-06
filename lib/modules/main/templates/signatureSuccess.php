@@ -5,7 +5,7 @@
   </div>
   <div>
     <button id="clear-btn" type="button" style="font-size:2em;padding: 0 0.5em;border-radius:0.1em;">Wissen</button>
-    <button id="save-btn" type="button" style="float:right;font-size:2em;padding: 0 0.5em;border-radius:0.1em;">Opslaan</button>
+    <button id="save-btn" type="button" style="float:right;font-size:2em;padding: 0 0.5em;border-radius:0.1em;">Akkoord</button>
     <div id="save-msg"></div>
   </div>
 </div>

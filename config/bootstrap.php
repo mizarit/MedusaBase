@@ -21,16 +21,50 @@ else if (isset($_GET['ju'])) {
   $user_id = $_COOKIE['xid_id'];
 }
 
+$current_user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+if (!$current_user) {
+  $current_user = new User;
+  $current_user->firstName = 'Temp';
+  $current_user->lastName = 'user';
+  $current_user->xid = 'native'.$user_id;
+  $current_user->save();
+  setcookie('xid_id', $current_user->xid, strtotime('+1 year'), '/');
+}
+
 if (!session_id()) session_start();
 
 Registry::set('user_id',$user_id);
 
+$oa = new OAAPI();
+Registry::set('oa_api', $oa);
+$agendas = $oa->sendRequest('getAgendas');
+$agenda = array_shift($agendas['Agenda']);
+Registry::set('oa_agenda', $agenda);
+
+/*
+$agenda = Registry::get('oa_agenda');
+$appointments = $oa->sendRequest('getAppointments', array(
+  'AgendaId' => $agenda['Id'],
+  'ResourceId' => 1, // Blonde Dollie
+  'StartDate' => date('y-m-d'),
+  'EndDate' => date('y-m-d')
+));
+if (isset($appointments['Appointment'])) {
+  foreach ($appointments['Appointment'] as $appointment) {
+    echo $appointment['Name'];
+    echo $appointment['StartTime'];
+    echo $appointment['FinishTime'];
+    echo $appointment['BlockedTime'];
+    echo $appointment['CustomerId'];
+    //var_dump($appointment);
+  }
+}
+*/
 $device_info = $_GET;
 if (!isset($_GET['device']) && isset($_SESSION['device_info'])) {
   $device_info = json_decode($_SESSION['device_info'], true);
 }
 if (isset($device_info['device'])) {
-  $current_user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
   if ($current_user) {
     switch($device_info['device']) {
       case 'android':

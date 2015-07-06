@@ -10,24 +10,96 @@ if ($count > 0) {
   </div>
 <?php } ?>
 <div id="sidebar-left" class="sidebar">
-  <div id="sidebar-left-inner" class="sidebar-inner" style="overflow:scroll;">
-    <ul id="sidebar-nav">
-      <li class="main-item"><i class="fa fa-user"></i> Mijn account
-        <i class="fa fa-remove" style="position: absolute;right:<?php echo $iOS? '-0.9em':'0'; ?>;top:0;border:none;" onclick="toggleSidebar('sidebar-left');"></i></li>
 
-      <li class="disabled-item" onclick="setActive(this);goPage(1);toggleSidebar('sidebar-left');"><i class="fa fa-users"></i> Klanten</li>
-      <li class="disabled-item" onclick="setActive(this);goPage(2);toggleSidebar('sidebar-left');"><i class="fa fa-calendar"></i> Afspraken</li>
-      <li class="disabled-item" onclick="setActive(this);goPage(3);toggleSidebar('sidebar-left');"><i class="fa fa-wrench"></i> Werkbonnen</li>
-      <li class="disabled-item" onclick="setActive(this);goPage(6);toggleSidebar('sidebar-left');"><i class="fa fa-car"></i> Reistijden</li>
-      <li class="disabled-item" onclick="setActive(this);goPage(7);toggleSidebar('sidebar-left');"><i class="fa fa-clock-o"></i> Urenregistratie</li>
-      <li class="disabled-item" onclick="setActive(this);goPage(8);toggleSidebar('sidebar-left');"><i class="fa fa-photo"></i> Situatiefoto's</li>
-      <li class="disabled-item" onclick="setActive(this);goPage(9);toggleSidebar('sidebar-left');"><i class="fa fa-euro"></i> Kassa</li>
-      <li class="disabled-item" onclick="setActive(this);goPage(10);toggleSidebar('sidebar-left');"><i class="fa fa-comment"></i> Notities</li>
-      <li onclick="setActive(this);goPage(5);toggleSidebar('sidebar-left');"><i class="fa fa-pencil-square-o"></i> Digitale handtekening</li>
-      <li onclick="setActive(this);goPage(4);toggleSidebar('sidebar-left');"><i class="fa fa-cogs"></i> Instellingen</li>
-      <li onclick="window.location.href=window.location.href;"><i class="fa fa-bug"></i> Verversen</li>
-      <li onclick="window.location.href='/main/debug?ju=<?php echo $user_id; ?>';"><i class="fa fa-bug"></i>Debugger</li>
-    </ul>
 
+    <div id="sidebar-left-inner" class="sidebar-inner" style="overflow:scroll;width:100%;">
+      <h3><i class="fa fa-arrow-left" id="nav-back" onclick="closeSubmenu();"></i>Menu<i class="fa fa-close" id="nav-close" onclick="closeSubmenu();toggleSidebar('sidebar-left');"></i></h3>
+      <div id="mainnav" class="active">
+        <ul style="margin-top:0.5em;">
+          <li style="background:#fec508;color:#fff;"><i class="fa fa-user"></i> <span id="user-name">Blondie dollie</span></li>
+          <li onclick="setActive(this);goPage(2);toggleSidebar('sidebar-left');"><i class="fa fa-calendar"></i> Afspraken</li>
+          <!--<li onclick="setActive(this);goPage(1);toggleSidebar('sidebar-left');"><i class="fa fa-users"></i> Klanten</li>-->
+          <li onclick="setActive(this);Workorder.showWorkorders();goPage(16);toggleSidebar('sidebar-left');"><i class="fa fa-wrench"></i> Werkbonnen (<span id="workorder-count">0</span>)</li>
+          <!--<li onclick="setActive(this);goPage(10);toggleSidebar('sidebar-left');"><i class="fa fa-comment"></i> Notities</li>-->
+        </ul>
+          <ul>
+            <?php if($user->device=='android' || $user->device=='ios'){ ?>
+            <li class="subnav" onclick="openSubmenu();"><i class="fa fa-cogs"></i> Instellingen<span><i class="fa fa-chevron-right"></i></span></li>
+            <?php } ?>
+            <li onclick="window.location.href='/main/login';toggleSidebar('sidebar-left');"><i class="fa fa-sign-out"></i> Uitloggen</li>
+          </ul>
+          <?php if (strpos($_SERVER['SERVER_NAME'], 'mizar')) { ?>
+            <ul>
+              <li onclick="window.location.href=window.location.href;"><i class="fa fa-refresh"></i> Verversen</li>
+              <li onclick="window.location.href='/main/debug?ju=<?php echo $user_id; ?>';"><i class="fa fa-bug"></i>Debugger</li>
+            </ul>
+          <?php } ?>
+
+      </div>
+    <div id="subnav">
+      <h4>Instellingen</h4>
+
+      <h5>Notificaties</h5>
+      <?php if(isset($_SESSION['isAndroid']) && $_SESSION['isAndroid']){ ?>
+        <ul>
+          <li>
+            <label for="notifications">Notificaties ontvangen</label>
+            <input id="notifications" type="checkbox" checked="checked" onchange="Android.setSetting('notifications', this.checked ? '1' : '0');$('notifications-vibrate').disabled=this.checked?'':'disabled';$('notifications-sound').disabled=this.checked?'':'disabled';"><span onclick="$('notifications').click();" class="checkbox"></span>
+          </li>
+          <li>
+            <label for="notifications-sound">Geluid toestaan</label>
+            <input id="notifications-sound" type="checkbox" checked="checked" onchange="Android.setSetting('sound', this.checked ? '1' : '0');"><span class="checkbox" onclick="$('notifications-sound').click();"></span>
+          </li>
+          <li>
+            <label for="notifications-vibrate">Trillen toestaan</label>
+            <input id="notifications-vibrate" type="checkbox" checked="checked" onchange="Android.setSetting('vibrate', this.checked ? '1' : '0');"><span class="checkbox" onclick="$('notifications-vibrate').click();"></span>
+          </li>
+        </ul>
+      <?php } ?>
+      <?php  if(isset($_SESSION['isIos']) && $_SESSION['isIos']){ ?>
+        <ul>
+          <li>
+            <label for="notifications">Notificaties ontvangen</label>
+            <input id="notifications" type="checkbox" checked="checked" onchange="iOS.setSetting('notifications', this.checked ? '1' : '0');$('notifications-vibrate').disabled=this.checked?'':'disabled';$('notifications-sound').disabled=this.checked?'':'disabled';"><span onclick="$('notifications').click();" class="checkbox"></span>
+          </li>
+          <li>
+            <label for="notifications-sound">Geluid toestaan</label>
+            <input id="notifications-sound" type="checkbox" checked="checked" onchange="iOS.setSetting('sound', this.checked ? '1' : '0');"><span class="checkbox" onclick="$('notifications-sound').click();"></span>
+          </li>
+          <li>
+            <label for="notifications-vibrate">Trillen toestaan</label>
+            <input id="notifications-vibrate" type="checkbox" checked="checked" onchange="iOS.setSetting('vibrate', this.checked ? '1' : '0');"><span class="checkbox" onclick="$('notifications-vibrate').click();"></span>
+          </li>
+        </ul>
+      <?php } ?>
+    </div>
   </div>
 </div>
+<script type="text/javascript">
+  function openSubmenu()
+  {
+    $('subnav').addClassName('available');
+    $('mainnav').removeClassName('active');
+    $('subnav').addClassName('active');
+    $('nav-back').style.visibility = 'visible';
+
+    inToggleSidebar = true;
+    /*setTimeout(function() { inToggleSidebar = false; }, 700);*/
+  }
+
+  function closeSubmenu()
+  {
+    if($('subnav').hasClassName('active')) {
+      $('subnav').removeClassName('available');
+      $('mainnav').addClassName('active');
+      $('subnav').removeClassName('active');
+      $('nav-back').style.visibility = 'hidden';
+
+      inToggleSidebar = true;
+      setTimeout(function() { inToggleSidebar = false; }, 700);
+    }
+    else {
+      inToggleSidebar = false;
+    }
+  }
+</script>

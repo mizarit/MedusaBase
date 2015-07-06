@@ -67,6 +67,656 @@ class MainActions extends Actions {
     }
   }
 
+  private function sign($parameters, $salt, $secret = null) {
+    $parameters = array_merge($parameters, array(
+      'api_format' => 'jsonp',
+      'ApplicationId' => 'OABeheerApp'
+    ));
+
+    ksort($parameters);
+    $sign = '';
+    foreach ($parameters as $k => $v) {
+        if (in_array($k, array('api_salt', 'api_key', 'api_signature'))) continue;
+      $sign .= $k . $v;
+    }
+    $sign .= 'OABeheerApp';
+
+    if($secret) {
+      $sign .= $secret;
+    }
+    $sign .= $salt;
+
+    //echo "\n\n".$sign."\n\n";
+    $hash = sha1(str_replace(' ', '', $sign));
+    return $hash;
+  }
+
+  private function apiCall($parameters, $salt, $secret = null)
+  {
+    $hash = $this->sign($parameters, $salt, $secret);
+    $url = 'http://onlineafspraken.dev.mizar-it.nl/Api2013/?';
+    foreach ($parameters as $key => $value) {
+      $url .= $key.'='.$value.'&';
+    }
+    $url .= 'api_format=jsonp&ApplicationId=OABeheerApp&api_signature='.$hash.'&api_jsonp_callback=_jqjsp';
+    $response = file_get_contents($url);
+    //echo $response;
+    $json = json_decode(rtrim(substr($response, 7), ')'), true);
+    return $json;
+  }
+
+  public function executeLogin($params = array())
+  {
+    setcookie('xid_id', null, strtotime('+- year'), '/');
+    if (isset($_POST['username'])) {
+
+      $salt = time();
+
+      $username = $_POST['username'];
+      $password = $_POST['password'];
+
+      $parameters = array(
+        'Username' => $username,
+        'Password' => $password,
+        'method' => 'login',
+        'api_salt' => $salt
+      );
+      $json = $this->apiCall($parameters, $salt);
+
+      if ($json['status']['status'] == 'success') {
+
+        $accessToken = $json['result']['item']['AccessToken'];
+        $userSecret = $json['result']['item']['UserSecret'];
+
+        $parameters = array(
+          'method' => 'getUserInfo',
+          'api_salt' => $salt,
+          'accessToken' => $accessToken
+        );
+        $json_user = $this->apiCall($parameters, $salt, $userSecret);
+
+        $parameters = array(
+          'method' => 'getResources',
+          'api_salt' => $salt,
+          'accessToken' => $accessToken
+        );
+        $json_resources = $this->apiCall($parameters, $salt, $userSecret);
+        foreach ($json_resources['result']['items'] as $resource) {
+          if($resource['Name']==$json_user['result']['item']['name']) {
+            $user_id = $resource['Id'];
+
+            $current_user = User::model()->findByAttributes(new Criteria(array('xid' => 'Resource_' . $user_id)));
+            if (!$current_user) {
+              $current_user = new User;
+              $current_user->firstName = $resource['Name'];
+              $current_user->lastName = '';
+              $current_user->xid = 'Resource_' . $user_id;
+              $current_user->save();
+            }
+            setcookie('xid_id', $current_user->xid, strtotime('+1 year'), '/');
+            echo "<script>window.location.href='/main/index';</script>";
+            exit;
+          }
+        }
+
+
+      }
+      else {
+        $this->error = 'Gebruikersnaam of wachtwoord niet juist';
+      }
+    }
+  }
+
+  public function executeSearch($params = array())
+  {
+    $field = $_POST['field'];
+    $value = $_POST['value'];
+    $data = array(
+      array(
+        'title' => 'Test',
+        'fields' => array(
+          'contractor' => 'Test'
+        )
+      ),
+      array(
+        'title' => 'Test 1',
+        'fields' => array(
+          'contractor' => 'Test 1'
+        )
+      ),
+      array(
+        'title' => 'Test 2',
+        'fields' => array(
+          'contractor' => 'Test 2'
+        )
+      )
+    );
+    header('Content-Type: application/json');
+    echo json_encode($data);
+    exit;
+  }
+
+  public function executeSave($params = array())
+  {
+    $app = json_decode($_POST['app'], true);
+    $rows = json_decode($_POST['rows'], true);
+    $signature = base64_decode($_POST['signature']);
+    $images = array();
+    $photos = json_decode($_POST['photos'], true);
+    if (is_array($photos)) {
+      foreach ($photos as $photo) {
+        $images[] = base64_decode($photo);
+      }
+    }
+
+    $params['documenttype'] = 'Factuur';
+    $params['title'] = $app['workorder'];
+    $params['invoicenr'] = $app['workorder'];
+    $params['customernr'] = '000000';
+    $params['enddate'] = date('Y-m-d', strtotime('+4 weeks'));
+    $params['customer'] = $app['customer'].PHP_EOL.$app['address'].PHP_EOL.$app['zipcode'].' '.$app['city'];
+    $params['remarks'] = $_POST['remarks'];
+
+    foreach ($rows as $row) {
+      $tariff = $amount = 0;
+      switch ($row['type']) {
+        case 'hours':
+          $tariff = 50;
+          if ($row['minutes'] > 0) {
+            $amount = round(60 / $row['minutes'], 1);
+          }
+          break;
+        case 'product':
+          $tariff = $row['cost'];
+          $amount = $row['amount'];
+          break;
+        case 'activity':
+          $tariff = $row['cost'];
+          $amount = 1;
+          break;
+      }
+      $params['rows'][] = array(
+        'type' => $row['desc'],
+        'tariff' => $tariff,
+        'amount' => $amount
+      );
+    }
+
+
+
+    $params['companyname'] = 'Rijnstreek Verwarming B.V.';
+    $params['kvk'] = '52532860';
+    $params['btw'] = '8504.87.961.B.01';
+    $params['iban'] = 'NL06 INGB 0004 1120 33';
+    $params['iban_name'] = 'Rijnstreek Verwarming';
+    $params['site'] = 'www.rijnstreek.info';
+    $params['email'] = 'info@rijnstreek.info';
+    $params['invoicedays'] = 28;
+    $params['color1'] = '104080';
+    $params['color2'] = 'df0333';
+    $params['logo'] = 'logo-invoice-rijnstreek.jpg';
+    $params['sender_name'] = 'Rijnstreek Verwarming B.V.';
+    $params['sender_email'] = 'info@rijnstreek.info';
+    //$params['admin_email'] = 'ricardo.matters@mizar-it.nl';
+    $params['admin_email'] = 'rfphancy@gmail.com';
+
+    if (!is_dir(getcwd() . '/workorders')) {
+      mkdir(getcwd() . '/workorders', 0777);
+    }
+    if (!is_dir(getcwd() . '/workorders/' . $params['invoicenr'])) {
+      mkdir(getcwd() . '/workorders/' . $params['invoicenr']);
+    }
+    file_put_contents(getcwd().'/workorders/'.$params['invoicenr'].'/signature.png', $signature);
+    $image = imagecreatefrompng(getcwd().'/workorders/'.$params['invoicenr'].'/signature.png');
+    $size = getimagesize(getcwd().'/workorders/'.$params['invoicenr'].'/signature.png');
+    $new_image = imagecreatetruecolor($size[0], $size[1]);
+    $white = imagecolorallocate($new_image,  255, 255, 255);
+    imagefilledrectangle($new_image, 0, 0, $size[0], $size[1], $white);
+    imagecopy($new_image, $image, 0, 0, 0, 0, $size[0], $size[1]);
+    imagejpeg($new_image, getcwd().'/workorders/'.$params['invoicenr'].'/signature.jpg');
+    $params['signature'] = getcwd().'/workorders/'.$params['invoicenr'].'/signature.jpg';
+
+    $params['images'] = array();
+    $x = 0;
+    foreach ($images as $image) {
+      $x++;
+      file_put_contents(getcwd().'/workorders/'.$params['invoicenr'].'/photo-'.$x.'.jpg', $image);
+      $params['images'][] = getcwd().'/workorders/'.$params['invoicenr'].'/photo-'.$x.'.jpg';
+    }
+
+    $invoice = $this->generateInvoice($params);
+
+    $params['documenttype'] = 'Werkbon';
+
+    $workorder = $this->generateWorkorderCC($params);
+
+    ob_start();
+    include(dirname(__FILE__).'/../templates/_email.php');
+    $mail_html = ob_get_clean();
+
+    $mail = new PHPMailer;
+    $mail->isSendmail();
+    $mail->setFrom($params['sender_email'], $params['sender_name']);
+    $mail->addReplyTo($params['sender_email'], $params['sender_name']);
+
+    $mail->msgHTML($mail_html);
+    $mail->AltBody = $mail_html;
+    $mail->addStringAttachment(file_get_contents($invoice), 'factuur-'.$params['invoicenr'].'.pdf');
+    $mail->addStringAttachment(file_get_contents($workorder), 'werkbon-'.$params['invoicenr'].'.pdf');
+
+    if ($app['email']) {
+      $mail->addAddress($app['email'], $app['customer']);
+      $mail->addCC($params['admin_email'], $params['sender_name']);
+      $mail->Subject = 'Kopie factuur';
+      $mail->send();
+    }
+
+    $mail->clearAddresses();
+
+    ob_start();
+    include(dirname(__FILE__).'/../templates/_email_admin.php');
+    $mail_html = ob_get_clean();
+    $mail->msgHTML($mail_html);
+    $mail->AltBody = $mail_html;
+    $mail->Subject = 'Nieuwe werkbon';
+    $mail->addAddress($params['admin_email'], $params['sender_name']);
+
+    foreach($images as $c => $image) {
+      $mail->addStringAttachment($image, 'situatie-foto-'.($c+1).'.jpg');
+    }
+
+    if (!$mail->send()) {
+    } else {
+    }
+
+    echo 'OK';
+    exit;
+  }
+
+  public function generateInvoice($params = array())
+  {
+    $color1_r = hexdec(substr($params['color1'],0,2));
+    $color1_g = hexdec(substr($params['color1'],2,2));
+    $color1_b = hexdec(substr($params['color1'],4,2));
+
+    $color2_r = hexdec(substr($params['color2'],0,2));
+    $color2_g = hexdec(substr($params['color2'],2,2));
+    $color2_b = hexdec(substr($params['color2'],4,2));
+
+    $pdf= new PDF();
+    $pdf->AddPage();
+    $pdf->AddFont('Futura');
+    $pdf->AddFont('Futura', 'B');
+    $pdf->SetFont('Futura','',14);
+    $pdf->SetRightMargin(0);
+    $pdf->SetFillColor(247,247,247);
+    $pdf->Rect(0,0,220,28, 'F');
+    $pdf->Image(getcwd().'/img/'.$params['logo'],10,2, 45);
+
+    $pdf->setY(5);
+    $pdf->setX(100);
+    $pdf->SetFontSize(10);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->Write(4, $params['companyname']);
+    $pdf->Ln(4);
+    $pdf->SetFontSize(8);
+    $pdf->SetTextColor($color1_r,$color1_g,$color1_b);
+    $pdf->setX(100);
+    $pdf->Write(5, $params['site'].' | '.$params['email']);
+    $pdf->Ln(4);
+    $pdf->setX(100);
+    $pdf->Write(5, 'KvK '.$params['kvk'].' | BTW '.$params['btw'].' | IBAN '.$params['iban']);
+    $pdf->Ln(8);
+    $pdf->setX(100);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->SetFontSize(14);
+    $pdf->SetStyle('B',true);
+    $pdf->Write(5, strtoupper($params['documenttype']));
+    $pdf->Ln(5);
+    $pdf->SetStyle('B',false);
+
+    $pdf->SetStyle('B',true);
+    $pdf->SetFontSize(16);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->Ln(5);
+    $pdf->Write(5,$params['title']);
+
+    $nr = $params['title'];
+
+    $offset = 0;
+
+    $pdf->Ln(10);
+    $pdf->SetFontSize(10);
+    $pdf->SetTextColor($color1_r,$color1_g,$color1_b);
+    $pdf->Write(5, 'Uw gegevens');
+    $pdf->Ln(5);
+    $pdf->SetStyle('B',false);
+    $parts = explode("\n",$params['customer']);
+    if (count($parts) < 5) {
+      for($c = count($parts); $c < 5; $c++) {
+        $parts[] = '';
+      }
+    }
+    $parts = array_slice($parts,0,5);
+    foreach ($parts as $part) {
+      $pdf->Write(5, html_entity_decode($part));
+      $pdf->Ln(5);
+    }
+    $offset += ((count($parts) - 3) * 5);
+
+    $pdf->Ln(5);
+
+
+    $pdf->SetStyle('B',true);
+    $pdf->Write(5, 'Kenmerken');
+    $pdf->Ln(5);
+    $pdf->SetStyle('B',false);
+
+    $pdf->Write(5, 'Factuurdatum');
+    $pdf->Write(5, '');
+    $pdf->SetX(50);
+    $pdf->Write(5, date('d-m-Y', strtotime($params['enddate'])));
+    $pdf->Write(5, '');
+    $pdf->Ln(5);
+    $pdf->Write(5, 'Factuurnummer');
+    //$pdf->Write(5, 'Ordernummer');
+    $pdf->SetX(50);
+    $code =  $params['invoicenr'];
+
+    $pdf->Write(5, $code);
+    //$pdf->Write(5, $invoice->getCode());
+    $pdf->Ln(5);
+    $pdf->Write(5, 'Debiteurnummer');
+    $pdf->SetX(50);
+    $pdf->Write(5, $params['customernr']);
+
+    $pdf->Ln(10);
+
+    $pdf->SetStyle('B',true);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->Write(5, 'Omschrijving');
+    $pdf->SetX(120);
+    $pdf->Write(5, 'Uren/Aantal');
+    $pdf->SetX(150);
+    $pdf->Write(5, 'Tarief');
+    $pdf->SetX(180);
+    $pdf->Write(5, 'Totaal');
+    $pdf->Ln(10);
+
+    $pdf->SetLineWidth(0.3);
+    $pdf->SetDrawColor(178,178,178);
+    $pdf->Line(10,98+$offset,200,98+$offset);
+
+    $pdf->SetTextColor($color1_r,$color1_g,$color1_b);
+    $pdf->SetStyle('B',false);
+
+    $rows = array();
+    $total = 0;
+    foreach ($params['rows'] as $row) {
+      $rows[] = array(
+        $row['type'],
+        $row['amount'],
+        '€ '.str_replace(',00', ',-', number_format($row['tariff'] , 2, ',', '.')),
+        '€ '.str_replace(',00', ',-', number_format($row['amount']*$row['tariff'] , 2, ',', '.'))
+      );
+      $total += ($row['amount']*$row['tariff']);
+    }
+
+    for ($c = count($rows); $c < (24 - ($offset/5)); $c++)
+    {
+      $rows[] = array('', '', '', '');
+    }
+
+    foreach ($rows as $row) {
+      $pdf->Write(5, $row[0]);
+      $pdf->SetX(120);
+      $pdf->SetFont('Futura','',9);
+      $pdf->Write(5, $row[1]);
+
+      $pdf->SetFont('Arial','',9);
+      $pdf->SetX(150);
+      $pdf->Write(5, $row[2]);
+      $pdf->SetX(180);
+      $pdf->SetFont('Arial','',9);
+      $pdf->Write(5, $row[3]);
+      $pdf->SetFont('Futura','',9);
+      $pdf->Ln(5);
+    }
+
+    $pdf->SetLineWidth(0.3);
+    $pdf->SetDrawColor(178,178,178);
+    $pdf->Line(10,223,200,223);
+    $pdf->Ln(5);
+
+    $vat = strtotime($params['enddate']) < strtotime(date('2012-10-01')) && strtotime($params['enddate']) > 0 ? 19 : 21;
+    //$vat_factor = (100 + $vat) / 100;
+    $vat_factor = 100 + $vat;
+
+    $total_ex = ($total / $vat_factor)*100;
+
+//  $trtotime($invoice->getDate()) < strtotime(date('2012-10-01')) ? 19 : 21;
+    //$vat_factor = (100 + $vat) / 100;
+
+    //$total_ex = $invoice->getHourrate() * $time;
+    //$total = ($invoice->getHourrate() * $time) * $vat_factor;
+
+    $pdf->SetX(140);
+    $pdf->Write(5, 'Totaal exclusief BTW');
+    $pdf->SetX(180);
+    $pdf->SetFont('Arial','',10);
+    $pdf->Write(5, '€ '.str_replace(',00', ',-', number_format($total_ex, 2, ',', '.')));
+    $pdf->SetFont('Futura','',10);
+    $pdf->Ln(5);
+
+    $pdf->SetX(140);
+    $pdf->Write(5, $vat.'% BTW');
+    $pdf->SetX(180);
+    $pdf->SetFont('Arial','',10);
+    $pdf->Write(5, '€ '.str_replace(',00', ',-', number_format($total - $total_ex , 2, ',', '.')));
+    $pdf->SetFont('Futura','',10);
+    $pdf->Ln(5);
+
+    $pdf->SetLineWidth(0.5);
+    $pdf->SetDrawColor(178,178,178);
+    $pdf->Line(10,238,200,238);
+    $pdf->Ln(5);
+
+    $pdf->SetStyle('B',true);
+    $pdf->SetFontSize(12);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->SetX(140);
+    $pdf->Write(5, 'Totaal');
+    $pdf->SetX(180);
+    $pdf->SetFont('Arial','',12);
+    $pdf->SetStyle('B',true);
+    $pdf->Write(5, '€ '.str_replace(',00', ',-', number_format($total, 2, ',', '.')));
+    $pdf->SetFont('Futura','',10);
+    $pdf->Ln(5);
+
+    $pdf->SetFont('Futura','',10);
+    $pdf->SetStyle('B',false);
+    $pdf->SetStyle('B',false);
+    $pdf->SetFontSize(10);
+    $pdf->SetTextColor($color1_r,$color1_g,$color1_b);
+    //$pdf->Ln(($invoice->getPayed() > 0) ? 8 : 18);
+    $pdf->Ln(18);
+    $pdf->SetX(17);
+    $pdf->Write(5, 'Wij verzoeken u vriendelijk het factuurbedrag binnen '.$params['invoicedays'].' dagen na factuurdatum over te maken op bankrekening');
+    $pdf->Ln(5);
+    $pdf->SetX(33);
+    $pdf->Write(2, $params['iban'].' tnv '.$params['iban_name'].' o.v.v. uw debiteurnummer en factuurnummer.');
+
+    if (!is_dir(getcwd().'/invoices')) {
+      mkdir(getcwd().'/invoices', 0777);
+    }
+    $pdf->Output(getcwd().'/invoices/'.$params['invoicenr'].'.pdf');
+
+    return getcwd().'/invoices/'.$params['invoicenr'].'.pdf';
+    /*
+    $server = str_replace('cms.', '', $_SERVER['HTTP_HOST']);
+
+    header('Location: http://'.$server.'/invoices/'.$params['invoicenr'].'.pdf');
+    exit;*/
+  }
+
+  public function generateWorkorderCC($params = array()) {
+    $color1_r = hexdec(substr($params['color1'],0,2));
+    $color1_g = hexdec(substr($params['color1'],2,2));
+    $color1_b = hexdec(substr($params['color1'],4,2));
+
+    $color2_r = hexdec(substr($params['color2'],0,2));
+    $color2_g = hexdec(substr($params['color2'],2,2));
+    $color2_b = hexdec(substr($params['color2'],4,2));
+
+    $pdf= new PDF();
+    $pdf->AddPage();
+    $pdf->AddFont('Futura');
+    $pdf->AddFont('Futura', 'B');
+    $pdf->SetFont('Futura','',14);
+    $pdf->SetRightMargin(0);
+    $pdf->SetFillColor(247,247,247);
+    $pdf->Rect(0,0,220,28, 'F');
+    $pdf->Image(getcwd().'/img/'.$params['logo'],10,5, 45);
+
+    $pdf->setY(5);
+    $pdf->setX(100);
+    $pdf->SetFontSize(10);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->Write(4, $params['companyname']);
+    $pdf->Ln(4);
+    $pdf->SetFontSize(8);
+    $pdf->SetTextColor($color1_r,$color1_g,$color1_b);
+    $pdf->setX(100);
+    $pdf->Write(5, $params['site'].' | '.$params['email']);
+    $pdf->Ln(4);
+    $pdf->setX(100);
+    $pdf->Write(5, 'KvK '.$params['kvk'].' | BTW '.$params['btw'].' | IBAN '.$params['iban']);
+    $pdf->Ln(8);
+    $pdf->setX(100);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->SetFontSize(14);
+    $pdf->SetStyle('B',true);
+    $pdf->Write(5, strtoupper($params['documenttype']));
+    $pdf->Ln(5);
+    $pdf->SetStyle('B',false);
+
+    $pdf->SetStyle('B',true);
+    $pdf->SetFontSize(16);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->Ln(5);
+    $pdf->Write(5,$params['title']);
+
+    $nr = $params['title'];
+
+    $offset = 0;
+
+    $pdf->Ln(10);
+    $pdf->SetFontSize(10);
+    $pdf->SetTextColor($color1_r,$color1_g,$color1_b);
+    $pdf->Write(5, 'Uw gegevens');
+    $pdf->Ln(5);
+    $pdf->SetStyle('B',false);
+    $parts = explode("\n",$params['customer']);
+    if (count($parts) < 3) {
+      for($c = count($parts); $c < 3; $c++) {
+        $parts[] = '';
+      }
+    }
+    $parts = array_slice($parts,0,3);
+    foreach ($parts as $part) {
+      $pdf->Write(5, html_entity_decode($part));
+      $pdf->Ln(5);
+    }
+    $offset += ((count($parts) - 3) * 5);
+
+
+
+    $pdf->Write(5, 'Debiteurnummer '.$params['customernr']);
+
+    $pdf->Ln(10);
+
+    $pdf->SetStyle('B',true);
+    $pdf->SetTextColor($color2_r,$color2_g,$color2_b);
+    $pdf->Write(5, 'Omschrijving');
+    $pdf->SetX(120);
+    $pdf->Write(5, 'Uren/Aantal');
+
+    $pdf->Ln(10);
+
+    $pdf->SetLineWidth(0.3);
+    $pdf->SetDrawColor(178,178,178);
+    $pdf->Line(10,78+$offset,200,78+$offset);
+
+    $pdf->SetTextColor($color1_r,$color1_g,$color1_b);
+    $pdf->SetStyle('B',false);
+
+    $rows = array();
+    $total = 0;
+    foreach ($params['rows'] as $row) {
+      $rows[] = array(
+        $row['type'],
+        $row['amount'],
+
+      );
+      $total += ($row['amount']*$row['tariff']);
+    }
+
+    for ($c = count($rows); $c < (16 - ($offset/5)); $c++)
+    {
+      $rows[] = array('', '');
+    }
+
+    foreach ($rows as $row) {
+      $pdf->Write(5, $row[0]);
+      $pdf->SetX(120);
+      $pdf->SetFont('Futura','',9);
+      $pdf->Write(5, $row[1]);
+      $pdf->Ln(5);
+    }
+
+    $pdf->SetLineWidth(0.3);
+    $pdf->SetDrawColor(178,178,178);
+    $pdf->Line(10,163,200,163);
+    $pdf->Ln(5);
+
+    if(count($params['images']) > 6) {
+      $params['images'] = array_slice($params['images'],0,6);
+    }
+    $x = -1;
+    $y = 0;
+    foreach ($params['images'] as $image) {
+      $x++;
+      if ($x == 3) {
+        $x = 0;
+        $y++;
+      }
+
+      $pdf->Image($image,10 + ($x * 65),170 + ($y * 30), 60);
+    }
+
+    $pdf->SetY(230);
+    $pdf->SetFont('Futura','',9);
+    $pdf->Write(5, 'Handtekening klant:');
+    $pdf->Image($params['signature'],10,240, 70);
+
+    $pdf->SetY(230);
+    $pdf->SetX(120);
+    $pdf->Write(5, 'Opmerkingen:');
+    $pdf->Ln(5);
+    $pdf->SetX(120);
+    $pdf->Write(5, $params['remarks']);
+
+    if (!is_dir(getcwd().'/workorders')) {
+      mkdir(getcwd().'/workorders', 0777);
+    }
+    $pdf->Output(getcwd().'/workorders/'.$params['invoicenr'].'.pdf');
+
+    //header('Location: /workorders/'.$params['invoicenr'].'.pdf');
+    //exit;
+    return getcwd().'/workorders/'.$params['invoicenr'].'.pdf';
+
+  }
   public function executeAbout($params = array())
   {
 
@@ -74,11 +724,48 @@ class MainActions extends Actions {
 
   public function executeIndex($params = array())
   {
-    $user_id = Registry::get('user_id');
-    $user = new User;
-    $user->firstName = 'Ricardo';
-    $user->lastName = 'Matters';
+    /*$params['documenttype'] = 'Werkbon';
+    $params['title'] = 'WO-00000001';
+    $params['invoicenr'] = 'WO-00000001';
+    $params['customernr'] = '1234';
+    $params['enddate'] = date('Y-m-d', strtotime('+4 weeks'));
+    $params['customer'] = "Ricardo Matters
+Schimmelweg 395
+2524XA Den Haag";
+    $params['rows'] = array(
+      array('type' => 'Arbeidstijd', 'tariff' => 65, 'amount' => 0.5),
+      array('type' => 'Waterpomp', 'tariff' => 125, 'amount' => 1),
+    );
+    $params['companyname'] = 'Mizar IT';
+    $params['kvk'] = '27349424';
+    $params['btw'] = 'NL175610058B01';
+    $params['iban'] = 'NL73RABO0161412173';
+    $params['iban_name'] = 'H R Matters';
+    $params['site'] = 'www.mizar-it.nl';
+    $params['email'] = 'info@mizar-it.nl';
+    $params['invoicedays'] = 14;
+    $params['color1'] = '212121';
+    $params['color2'] = 'df0084';
+    $params['logo'] = 'logo-mizar-online-invoice.jpg';
+    $params['signature'] = 'logo-mizar-online-invoice.jpg';
+    $params['images'][0] = 'logo-mizar-online-invoice.jpg';
+    $params['images'][1] = 'logo-mizar-online-invoice.jpg';
+    $params['images'][2] = 'logo-mizar-online-invoice.jpg';
+    $params['images'][3] = 'logo-mizar-online-invoice.jpg';
+    $params['images'][4] = 'logo-mizar-online-invoice.jpg';
+    $params['images'][5] = 'logo-mizar-online-invoice.jpg';
+    $params['images'][6] = 'logo-mizar-online-invoice.jpg';
 
+    $this->generateWorkorderCC($params);
+      exit;*/
+    $user_id = Registry::get('user_id');
+    $user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+    if (!$user) {
+      /*
+
+      */
+      header('Location: /main/login');
+    }
     $this->user = $user;
     $this->user_id = $user_id;
 
@@ -93,6 +780,57 @@ class MainActions extends Actions {
     if (isset($params['return_data']) && $params['return_data']) {
       return $local_data;
     }
+  }
+
+  public function executeLoadAppointments($params = array())
+  {
+    $json_appointments = array();
+
+    $params['date'] = $_POST['date'];
+
+    $user_id = Registry::get('user_id');
+    $user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+    $resource_id = substr($user->xid, 9);
+    $oa = Registry::get('oa_api');
+    $agenda = Registry::get('oa_agenda');
+    $appointments = $oa->sendRequest('getAppointments', array(
+      'AgendaId' => $agenda['Id'],
+      'ResourceId' => $resource_id, // Blonde Dollie
+      'StartDate' => date('y-m-d', strtotime($params['date'])),
+      'EndDate' => date('y-m-d', strtotime($params['date']))
+    ));
+    if (isset($appointments['Appointment'])) {
+      foreach ($appointments['Appointment'] as $appointment) {
+        $consumer = false;
+        if ($appointment['CustomerId']) {
+          $consumer = $oa->sendRequest('getCustomer', array(
+            'id' => $appointment['CustomerId']
+          ));
+          if ($consumer) {
+            $consumer = $consumer['Customer'][0];
+          }
+        }
+
+        $json_appointments[$appointment['Id']] = array(
+          'orderrows' => array($appointment['Name']),
+          'workorder' => 'WO-'.str_pad($appointment['Id'], 8, '0', STR_PAD_LEFT),
+          'time' => date('H:i', strtotime($appointment['StartTime'])).' - '.date('H:i', strtotime($appointment['FinishTime'])),
+          'id' => $appointment['Id']
+        );
+        if ($consumer) {
+          $json_appointments[$appointment['Id']]['customer'] = $consumer['FirstName'] . ' ' . $consumer['LastName'];
+          $json_appointments[$appointment['Id']]['contact'] = $consumer['FirstName'] . ' ' . $consumer['LastName'];
+          $json_appointments[$appointment['Id']]['address'] = $consumer['Street'] . ' ' . $consumer['HouseNr'] . $consumer['HouseNrAddition'];
+          $json_appointments[$appointment['Id']]['zipcode'] = $consumer['ZipCode'];
+          $json_appointments[$appointment['Id']]['city'] = $consumer['City'];
+          $json_appointments[$appointment['Id']]['phone'] = $consumer['Phone'];
+          $json_appointments[$appointment['Id']]['email'] = $consumer['Email'];
+        }
+      }
+    }
+    header('Content-Type: application/json');
+    echo json_encode(array(date('y-m-d', strtotime($params['date'])) => $json_appointments));
+    exit;
   }
 
   public function executeGroupchat($params = array())
@@ -345,15 +1083,23 @@ class MainActions extends Actions {
             style="text-align:right;padding: 0.1em 0.1em 0 0;font-size:0.3em;font-style:italic;"><?php echo date('H:i', strtotime($message->date)); ?></li>
         <?php
         }
+
+        $cls = 'other';
+        $name = $senders[$message->sender]->firstName;
+        if ($current_user->id == $message->sender) {
+        $name = 'Jijzelf';
+        $cls = 'own';
+        }
+        if ($message->sender == 0) {
+        $name = 'Beheerder';
+        $cls = 'admin';
+        }
+
         ?>
-        <li>
-          <strong<?php if ($current_user->id == $message->sender) echo ' style="color:#41df22;"' ?>><?php echo $senders[$message->sender]->firstName; ?>
-            :</strong> <?php echo $message->message; ?></li>
-      <?php
-      }
-      if (count($messages) < 50) {
-        ?>
-        <li><strong style="color:#ccfc0c;">Beheerder:</strong> Welkom bij de team-chat!</li>
+        <li class="<?php echo $cls; ?>"><span><?php echo $name; ?></span><div><?php echo $message->message; ?></div></li>
+      <?php }
+      if(count($messages) < 50) { ?>
+        <li class="admin"><span>Beheerder</span><div>Welkom bij de team-chat!</div></li>
       <?php } ?>
     </ul>
     <?php
@@ -389,7 +1135,7 @@ class MainActions extends Actions {
       $image = base64_decode($_POST['image']);
       file_put_contents(getcwd().'/img/signatures/'.$filename, $image);
       $url = 'http://'.$_SERVER['SERVER_NAME'].'/img/signatures/'.$filename;
-      echo 'Bestand opgeslagen: <a target="_blank" href="'.$url.'">'.$url.'</a>';
+      echo "OK";
       exit;
     }
   }

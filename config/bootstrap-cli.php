@@ -32,10 +32,10 @@ Registry::set('db', $db);
 require('lib/Tools.lib.php');
 require('lib/Route.lib.php');
 require('lib/Actions.lib.php');
-require('lib/vendor/jawbone/JawboneAPI.lib.php');
-require('lib/vendor/jawbone/JawboneOAuth.lib.php');
-//require('lib/vendor/fitbit/FitbitAPI.lib.php');
-
+require('lib/vendor/onlineafspraken/api.lib.php');
+require('lib/vendor/phpmailer/PHPMailerAutoload.php');
+require('lib/vendor/fpdf/FPDF.class.php');
+require('lib/vendor/PDF/PDF.lib.php');
 /*
 for ($i = 0; $i <10; $i++) {
   $code = rand(100000,999999);

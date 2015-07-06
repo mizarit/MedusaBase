@@ -1,5 +1,5 @@
 <div id="page-4" style="padding: 0;margin:0;">
-  <h2 style="margin:0;padding:0;border-top:#fff 1px solid;background:#f36518;font-size:1.5em;line-height:1.6em;color:#fff;">Instellingen iOS</h2>
+  <h2 style="margin:0;padding:0;border-top:#fff 1px solid;background:#2ea6dd;font-size:1.5em;line-height:1.6em;color:#fff;">Instellingen iOS</h2>
   <div style="padding: 0.5em;">
   <input id="notifications" type="checkbox" onchange="iOS.setSetting('notifications');$('notifications-vibrate').disabled=this.checked?'':'disabled';$('notifications-sound').disabled=this.checked?'':'disabled';">
   <label class="checkbox" for="notifications" style="margin-bottom:0.4em;"> Notificaties ontvangen</label><br>

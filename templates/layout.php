@@ -11,6 +11,8 @@ $cache_version = '1.0.0'.time(); ?>
   <link rel="apple-touch-icon" href="/iphone-icon.png"/>
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <script type="text/javascript" src="/js/prototype.js"></script>
+  <script type="text/javascript" src="/js/scriptaculous.js?load=effects"></script>
+  <script type="text/javascript" src="/js/effects.js"></script>
   <?php if(isset($_SESSION['isIos']) && $_SESSION['isIos']) { ?>
   <script type="text/javascript" src="/js/app-ios.js?t=<?php echo $cache_version; ?>"></script>
   <?php } ?>
