@@ -41,11 +41,13 @@
   <h2 style="margin:0;padding:0;border-top:#fff 1px solid;background:#2ea6dd;font-size:1.5em;line-height:1.6em;color:#fff;">Uren toevoegen</h2>
   <div style="padding: 0.5em;">
     <div class="form-row">
+
+
+      <div class="form-label"><label for="hoursrowdesc">Omschrijving</label></div>
       <div class="search">
         <span class="fa fa-search"></span>
-        <div class="form-label"><label for="hoursrowdesc">Omschrijving</label></div>
+        <input type="text" name="hoursrowdesc" id="hoursrowdesc" placeholder="Omschrijving" value="Omschrijving" class="smart-input empty">
       </div>
-      <input type="text" name="hoursrowdesc" id="hoursrowdesc" placeholder="Omschrijving" value="Omschrijving" class="smart-input empty">
     </div>
     <div class="form-row">
       <div class="form-label"><label for="hoursrowminutes">Minuten</label></div>
@@ -98,12 +100,6 @@
 
   <div style="clear:both;"></div>
   <ul class="subnav" id="shortlist-picker">
-    <!--<li onclick="Workorder.addQuicklistRow('Voorrijkosten');">Voorrijkosten</li>
-    <li onclick="Workorder.addQuicklistRow('Ketel onderhoud');">Ketel onderhoud</li>
-    <li onclick="Workorder.addQuicklistRow('Ketel plaatsen');">Ketel plaatsen</li>
-    <li onclick="Workorder.addQuicklistRow('Waterpomp vervangen');">Waterpomp vervangen</li>
-    <li onclick="Workorder.addQuicklistRow('Thermostaat vervangen');">Thermostaat vervangen</li>
-    <li onclick="Workorder.addQuicklistRow('Drukventiel vervangen');">Drukventiel vervangen</li>-->
   </ul>
 </div>
 

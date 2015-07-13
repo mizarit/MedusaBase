@@ -432,6 +432,10 @@ input[type=checkbox]:disabled + .checkbox:before {
     height: 6.6em;
 }
 
+#workorder-list li {
+    padding: 0.1em 0.3em;
+}
+
 #consumer-list li i,
 #workorder-list li i,
 #appointment-list li i {
@@ -703,6 +707,11 @@ input {
     background: #56d600;
 }
 
+.subnav li.delete {
+    margin-top: 1em;
+    background: #e93653;
+}
+
 .subnav li.shortlist {
     background: #17b7ee;
 }
@@ -750,6 +759,12 @@ input[type="file"]#fileElem1 {
     padding: 0;
 }
 
+#invoice-summary,
+#check-summary {
+    margin-bottom: 1em;
+
+}
+
 #orderrows li,
 #invoice-summary li,
 #workorder-summary li,
@@ -777,19 +792,20 @@ input[type="file"]#fileElem1 {
     font-size: 1em;
     line-height: 1.5em;
     color: #fff;
-    background: #e93653;
+    background: #56d600;
     border: none;
 }
 
 #orderrows li button:first-of-type {
     margin-right: 2%;
-    background: #56d600;
+    background: #e93653;
 }
 
 #workorder-summary li button {
     display: none !important
 }
 
+.row-total:before,
 .row-type-activity:before,
 .row-type-product:before,
 .row-type-hours:before {
@@ -816,6 +832,16 @@ input[type="file"]#fileElem1 {
 
 .row-type-hours:before {
     content: "\f017";
+}
+
+.row-total:before {
+    content: "\f153";
+    font-size: 1em;
+}
+
+.row-total {
+    border-top: #cecece 1px solid;
+    border-bottom: #cecece 2px solid;
 }
 
 .subnav li {
@@ -1031,4 +1057,27 @@ border: #fafafa 2px solid;
 
 .search-result li:nth-child(odd) {
     background: #f8f8f8;
+}
+
+#connection-down {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    z-index: 300;
+    display: none;
+}
+
+#connection-down.active {
+    display: block;
+}
+
+#connection-down div {
+    border: #fff 2px solid;
+    height: 2.5em;
+    line-height: 2.5em;
+    font-size: 1.2em;
+    background: #e93653;
+    color: #fff;
 }

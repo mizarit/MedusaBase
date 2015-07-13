@@ -56,10 +56,11 @@
   <li id="sn-7" class="inactive" onclick="if(!$(this).hasClassName('inactive')) { Workorder.finishWork(); }">Werkzaamheden afronden</li>
   <li id="sn-3" class="inactive" onclick="if(!$(this).hasClassName('inactive')) { Workorder.loadWorkorder(Workorder.current_workorder);Workorder.showOrderrows(); goPage(12, 3);}">Orderregels bewerken <span class="fa fa-check"></span></li>
   <li id="sn-4" class="inactive" onclick="if(!$(this).hasClassName('inactive')) { Workorder.loadWorkorder(Workorder.current_workorder);Workorder.renderPhotos(); goPage(8, 3); }">Situatiefoto's (<span id="photo-count">0</span>) <span class="fa fa-check"></span></li>
-  <li id="sn-8" class="inactive" onclick="if(!$(this).hasClassName('inactive')) { Workorder.checkWorkorder(); }">Controleren <span class="fa fa-check"></span></li>
-  <li id="sn-6" class="inactive" onclick="if(!$(this).hasClassName('inactive')) goPage(5, 3);">Ondertekenen <span class="fa fa-check"></span></li>
+  <li id="sn-8" class="inactive" onclick="if(!$(this).hasClassName('inactive')) { Workorder.loadWorkorder(Workorder.current_workorder);Workorder.showOrderrows();Workorder.checkWorkorder(); }">Controleren <span class="fa fa-check"></span></li>
+  <li id="sn-6" class="inactive" onclick="if(!$(this).hasClassName('inactive')) { Workorder.loadWorkorder(Workorder.current_workorder);Workorder.showOrderrows(); goPage(5, 3);}">Ondertekenen <span class="fa fa-check"></span></li>
 
-  <li id="sn-5" class="inactive" onclick="if(!$(this).hasClassName('inactive')) { Workorder.calculateInvoice(); goPage(9, 3); } ">Afrekenen</li>
+  <li id="sn-5" class="inactive" onclick="if(!$(this).hasClassName('inactive')) { Workorder.loadWorkorder(Workorder.current_workorder);Workorder.showOrderrows(); Workorder.calculateInvoice(); goPage(9, 3); } ">Afrekenen</li>
+  <li id="sn-9" class="delete" onclick="if(!$(this).hasClassName('inactive')) { Workorder.deleteWorkorder(); goPage(2); } ">Werkbon verwijderen</li>
 
 
 </ul>

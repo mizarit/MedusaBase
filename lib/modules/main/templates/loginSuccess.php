@@ -11,7 +11,7 @@
       <form action="#" method="post" id="login-form">
       <div class="form-row">
         <div class="form-label"><label for="username">Gebruikersnaam</label></div>
-        <input type="text" name="username" id="username" value="Gebruikersnaam" class="smart-input empty"<?php if (isset($_SESSION['isIos'])&&$_SESSION['isIos']) echo ' style="width:90%"'; ?>>
+        <input type="text" name="username" id="username" placeholder="Gebruikersnaam" value="" class="smart-input"<?php if (isset($_SESSION['isIos'])&&$_SESSION['isIos']) echo ' style="width:90%"'; ?>>
       </div>
       <div class="form-row">
         <div class="form-label"><label for="password">Wachtwoord</label></div>

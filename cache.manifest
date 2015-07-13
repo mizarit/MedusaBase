@@ -1,0 +1,32 @@
+CACHE MANIFEST
+# 2015-07-13 17:33
+/css/mobile.css
+/css/font-awesome/css/font-awesome.css
+/css/font-awesome/fonts/fontawesome-webfont.woff2?v=4.3.0
+/css/font-awesome/fonts/fontawesome-webfont.woff?v=4.3.0
+/css/font-awesome/fonts/fontawesome-webfont.ttf?v=4.3.0
+/js/app-android.js
+/js/app-ios.js
+/js/effects.js
+/js/helpers.js
+/js/mobile.js
+/js/prototype.js
+/js/scriptaculous.js?load=effects
+/js/sidebar.js
+/js/signature.js
+/js/swipeable.js
+/js/offline.js
+/img/bullet.png
+/img/bullet.png
+/img/button-arrow.png
+/img/button-arrow-black.png
+/img/button-back.png
+/img/button-bkg.png
+/img/icon-person.png
+/img/sidebar-bkg.png
+/img/stats-bkg.png
+/main/index
+NETWORK:
+/main/login
+/main/logoff
+/main/connectionTest

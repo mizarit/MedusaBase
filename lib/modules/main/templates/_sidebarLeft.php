@@ -26,11 +26,12 @@ if ($count > 0) {
             <?php if($user->device=='android' || $user->device=='ios'){ ?>
             <li class="subnav" onclick="openSubmenu();"><i class="fa fa-cogs"></i> Instellingen<span><i class="fa fa-chevron-right"></i></span></li>
             <?php } ?>
-            <li onclick="window.location.href='/main/login';toggleSidebar('sidebar-left');"><i class="fa fa-sign-out"></i> Uitloggen</li>
+            <li onclick="window.location.href='/main/logoff';toggleSidebar('sidebar-left');"><i class="fa fa-sign-out"></i> Uitloggen</li>
           </ul>
           <?php if (strpos($_SERVER['SERVER_NAME'], 'mizar')) { ?>
             <ul>
               <li onclick="window.location.href=window.location.href;"><i class="fa fa-refresh"></i> Verversen</li>
+              <li onclick="localStorage.clear();window.location.href='/main/index';"><i class="fa fa-refresh"></i> Cache legen</li>
               <li onclick="window.location.href='/main/debug?ju=<?php echo $user_id; ?>';"><i class="fa fa-bug"></i>Debugger</li>
             </ul>
           <?php } ?>

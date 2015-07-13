@@ -5,6 +5,12 @@ use OAuth\Common\Storage\Session;
 use OAuth\Common\Consumer\Credentials;
 
 class MainActions extends Actions {
+  public function executeConnectionTest($params = array())
+  {
+    echo 'OK';
+    exit;
+  }
+
   public function executeDebug($params = array())
   {
     $user_id = Registry::get('user_id');
@@ -105,9 +111,15 @@ class MainActions extends Actions {
     return $json;
   }
 
-  public function executeLogin($params = array())
+  public function executeLogoff($params = array())
   {
     setcookie('xid_id', null, strtotime('+- year'), '/');
+    echo "<script>window.location.href='/main/login';</script>";
+    exit;
+  }
+
+  public function executeLogin($params = array())
+  {
     if (isset($_POST['username'])) {
 
       $salt = time();
@@ -141,25 +153,28 @@ class MainActions extends Actions {
           'accessToken' => $accessToken
         );
         $json_resources = $this->apiCall($parameters, $salt, $userSecret);
+        $current_user = User::model()->findByAttributes(new Criteria(array('xid' => Registry::get('user_id'))));
+        if (!$current_user) {
+          // generate one?
+        }
+
         foreach ($json_resources['result']['items'] as $resource) {
           if($resource['Name']==$json_user['result']['item']['name']) {
             $user_id = $resource['Id'];
-
-            $current_user = User::model()->findByAttributes(new Criteria(array('xid' => 'Resource_' . $user_id)));
-            if (!$current_user) {
-              $current_user = new User;
+            if ($current_user->resourceId != $user_id) {
               $current_user->firstName = $resource['Name'];
               $current_user->lastName = '';
-              $current_user->xid = 'Resource_' . $user_id;
-              $current_user->save();
+              $current_user->resourceId = $user_id;
             }
+            $current_user->accessToken = $accessToken;
+            $current_user->userSecret = $userSecret;
+            $current_user->save();
+
             setcookie('xid_id', $current_user->xid, strtotime('+1 year'), '/');
             echo "<script>window.location.href='/main/index';</script>";
             exit;
           }
         }
-
-
       }
       else {
         $this->error = 'Gebruikersnaam of wachtwoord niet juist';
@@ -167,10 +182,116 @@ class MainActions extends Actions {
     }
   }
 
-  public function executeSearch($params = array())
+  private function _searchCustomerAPI($value, $offset = 0, $limit = 50)
   {
-    $field = $_POST['field'];
-    $value = $_POST['value'];
+    $oa = Registry::get('oa_api');
+    $agenda = Registry::get('oa_agenda');
+    $consumers = $oa->sendRequest('getCustomers', array(
+      'AgendaId' => $agenda['Id'],
+      'Offset' => $offset,
+      'Limit' => $limit
+    ));
+
+    $fullList = array();
+    foreach ($consumers['Customer'] as $customer) {
+      $tmp = array(
+        'Name' => str_replace('  ', ' ', $customer['FirstName'].' '.$customer['Insertions'].' '.$customer['LastName']),
+        'Addresss' => str_replace('  ', ' ', $customer['Street'].' '.$customer['HouseNr'].' '.$customer['HouseNrAddition']),
+        'ZipCode' => $customer['ZipCode'],
+        'City' => $customer['City'],
+        'Phone' => $customer['Phone']!=''?$customer['Phone']:$customer['MobilePhone'],
+        'Email' => $customer['Email'],
+        'SearchKey' => strtoupper(str_replace(' ', '', $customer['ZipCode'].$customer['HouseNr']))
+      );
+      $fullList[] = $tmp;
+    }
+
+    if (($consumers['Stats']->Offset + $consumers['Stats']->Records) < $consumers['Stats']->TotalRecords ) {
+      $offset += $limit;
+      $more = $this->_searchCustomerAPI($value, $offset, $limit);
+      $fullList = array_merge($fullList, $more);
+    }
+
+    return $fullList;
+  }
+
+  private function _searchCustomer($value)
+  {
+    $cache = isset($_SESSION['customer_cache']) ? $_SESSION['customer_cache'] : false;
+    if (!$cache || $cache['lifetime'] < strtotime('-1 hour')) {
+      $customers = $this->_searchCustomerAPI($value);
+      $cache['customers'] = $customers;
+      $cache['lifetime'] = time();
+      $_SESSION['customer_cache'] = $cache;
+    }
+    $customers = $cache['customers'];
+    $search = strtoupper(str_replace(' ', '', $value));
+    $results = array();
+    foreach ($customers as $customer) {
+      if (strstr($customer['SearchKey'], 0, strlen($search)) == $search) {
+        $results[] = $customer;
+      }
+    }
+
+    $data = array();
+    $results = array_slice($results, 0, 5);
+    foreach ($results as $result) {
+      $data[] = array(
+        'title' => $result['Name'],
+        'fields' => array(
+          'customer' => $result['Name'],
+          'contact' => $result['Name'],
+          'address' => $result['Addresss'],
+          'zipcode' => $result['ZipCode'],
+          'city' => $result['City'],
+          'phone' => $result['Phone'],
+          'email' => $result['Email']
+        )
+      );
+    }
+
+    return $data;
+  }
+
+  private function _searchProductrowdesc($value)
+  {
+    $data = array();
+
+    $fullList = array();
+    $products = Registry::get('products');
+    foreach ($products as $product_category) {
+      if ($product_category['title']=='Diensten') {
+        foreach ($product_category['items'] as $product_subcategory) {
+          foreach ($product_subcategory['items'] as $item) {
+            $fullList[] = array(
+              'title' => $product_subcategory['title'].' > '.$item['title'],
+              'itemtitle' => $item['title'],
+              'price' => $item['price']
+            );
+          }
+        }
+      }
+    }
+    foreach ($fullList as $listItem) {
+      if (strstr($listItem['title'], $value)) {
+        $data[] = array(
+          'title' => $listItem['title'],
+          'fields' => array(
+            'productrowdesc' => $listItem['itemtitle'],
+            'productrowcost' => $listItem['price']
+          )
+        );
+      }
+    }
+    $data = array_splice($data, 0 ,5);
+
+    return $data;
+  }
+
+  private function _searchContractor($value)
+  {
+    $data = array();
+    /*
     $data = array(
       array(
         'title' => 'Test',
@@ -190,9 +311,96 @@ class MainActions extends Actions {
           'contractor' => 'Test 2'
         )
       )
-    );
+    );*/
+
+    return $data;
+  }
+
+  private function _searchHoursrowdesc($value)
+  {
+    $data = array();
+    $fullList = array();
+    $products = Registry::get('products');
+    foreach ($products as $product_category) {
+      if ($product_category['title']=='Diensten') {
+        foreach ($product_category['items'] as $product_subcategory) {
+          foreach ($product_subcategory['items'] as $item) {
+            $fullList[] = array(
+              'title' => $product_subcategory['title'].' > '.$item['title'],
+              'itemtitle' => $item['title'],
+              'price' => $item['price']
+            );
+          }
+        }
+      }
+    }
+    foreach ($fullList as $listItem) {
+      if (strstr($listItem['title'], $value)) {
+        $data[] = array(
+          'title' => $listItem['title'],
+          'fields' => array(
+            'hoursrowdesc' => $listItem['itemtitle'],
+          )
+        );
+      }
+    }
+    $data = array_splice($data, 0 ,5);
+
+    return $data;
+  }
+
+  private function _searchActivityrowdesc($value)
+  {
+    $data = array();
+
+    $fullList = array();
+    $products = Registry::get('products');
+    foreach ($products as $product_category) {
+      if ($product_category['title']=='Arbeidsloon') {
+        foreach ($product_category['items'] as $product_subcategory) {
+          foreach ($product_subcategory['items'] as $item) {
+            foreach ($item['items'] as $subitem) {
+              $fullList[] = array(
+                'title' => $product_subcategory['title'] . ' > ' . $item['title'] . ' > ' . $subitem['title'],
+                'itemtitle' => $subitem['title'],
+                'price' => $subitem['price']
+              );
+            }
+          }
+        }
+      }
+    }
+    foreach ($fullList as $listItem) {
+      if (strstr(strtolower($listItem['title']), strtolower($value))) {
+        $data[] = array(
+          'title' => $listItem['title'],
+          'fields' => array(
+            'activityrowdesc' => $listItem['itemtitle'],
+            'activityrowcost' => $listItem['price']
+
+          )
+        );
+      }
+    }
+    $data = array_splice($data, 0 ,5);
+
+    return $data;
+  }
+
+  public function executeSearch($params = array())
+  {
+    //$field = 'hoursrowdesc';
+    //$value = '02';
+    $field = $_POST['field'];
+    $value = $_POST['value'];
+
+    $method = '_search'.ucfirst($field);
+    if (method_exists($this, $method)) {
+      $result = $this->$method($value);
+    }
+
     header('Content-Type: application/json');
-    echo json_encode($data);
+    echo json_encode($result);
     exit;
   }
 
@@ -200,6 +408,7 @@ class MainActions extends Actions {
   {
     $app = json_decode($_POST['app'], true);
     $rows = json_decode($_POST['rows'], true);
+    $payment = json_decode($_POST['payment'], true);
     $signature = base64_decode($_POST['signature']);
     $images = array();
     $photos = json_decode($_POST['photos'], true);
@@ -212,10 +421,12 @@ class MainActions extends Actions {
     $params['documenttype'] = 'Factuur';
     $params['title'] = $app['workorder'];
     $params['invoicenr'] = $app['workorder'];
-    $params['customernr'] = '000000';
+    $params['customernr'] = isset($app['debitor'])?$app['debitor']:'';
     $params['enddate'] = date('Y-m-d', strtotime('+4 weeks'));
     $params['customer'] = $app['customer'].PHP_EOL.$app['address'].PHP_EOL.$app['zipcode'].' '.$app['city'];
     $params['remarks'] = $_POST['remarks'];
+    $params['ready'] = $_POST['ready'];
+    $params['payment'] = $payment;
 
     foreach ($rows as $row) {
       $tariff = $amount = 0;
@@ -257,8 +468,8 @@ class MainActions extends Actions {
     $params['logo'] = 'logo-invoice-rijnstreek.jpg';
     $params['sender_name'] = 'Rijnstreek Verwarming B.V.';
     $params['sender_email'] = 'info@rijnstreek.info';
-    //$params['admin_email'] = 'ricardo.matters@mizar-it.nl';
-    $params['admin_email'] = 'rfphancy@gmail.com';
+    $params['admin_email'] = 'ricardo.matters@mizar-it.nl';
+    //$params['admin_email'] = 'rfphancy@gmail.com';
 
     if (!is_dir(getcwd() . '/workorders')) {
       mkdir(getcwd() . '/workorders', 0777);
@@ -284,7 +495,9 @@ class MainActions extends Actions {
       $params['images'][] = getcwd().'/workorders/'.$params['invoicenr'].'/photo-'.$x.'.jpg';
     }
 
-    $invoice = $this->generateInvoice($params);
+    if (in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
+      $invoice = $this->generateInvoice($params);
+    }
 
     $params['documenttype'] = 'Werkbon';
 
@@ -301,13 +514,21 @@ class MainActions extends Actions {
 
     $mail->msgHTML($mail_html);
     $mail->AltBody = $mail_html;
-    $mail->addStringAttachment(file_get_contents($invoice), 'factuur-'.$params['invoicenr'].'.pdf');
+    if (in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
+      $mail->addStringAttachment(file_get_contents($invoice), 'factuur-' . $params['invoicenr'] . '.pdf');
+    }
     $mail->addStringAttachment(file_get_contents($workorder), 'werkbon-'.$params['invoicenr'].'.pdf');
 
     if ($app['email']) {
       $mail->addAddress($app['email'], $app['customer']);
       $mail->addCC($params['admin_email'], $params['sender_name']);
-      $mail->Subject = 'Kopie factuur';
+      if (in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
+        $mail->Subject = 'Werkbon en factuur van onze werkzaamheden';
+      }
+      else {
+        $mail->Subject = 'Werkbon van onze werkzaamheden';
+      }
+
       $mail->send();
     }
 
@@ -318,7 +539,13 @@ class MainActions extends Actions {
     $mail_html = ob_get_clean();
     $mail->msgHTML($mail_html);
     $mail->AltBody = $mail_html;
-    $mail->Subject = 'Nieuwe werkbon';
+    if (in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
+      $mail->Subject = 'Nieuwe werkbon en factuur';
+    }
+    else {
+      $mail->Subject = 'Nieuwe werkbon';
+    }
+
     $mail->addAddress($params['admin_email'], $params['sender_name']);
 
     foreach($images as $c => $image) {
@@ -541,11 +768,30 @@ class MainActions extends Actions {
     $pdf->SetTextColor($color1_r,$color1_g,$color1_b);
     //$pdf->Ln(($invoice->getPayed() > 0) ? 8 : 18);
     $pdf->Ln(18);
-    $pdf->SetX(17);
-    $pdf->Write(5, 'Wij verzoeken u vriendelijk het factuurbedrag binnen '.$params['invoicedays'].' dagen na factuurdatum over te maken op bankrekening');
-    $pdf->Ln(5);
-    $pdf->SetX(33);
-    $pdf->Write(2, $params['iban'].' tnv '.$params['iban_name'].' o.v.v. uw debiteurnummer en factuurnummer.');
+
+    switch($params['payment']['paymethod']) {
+      case 'invoice':
+
+        $pdf->SetX(17);
+        $pdf->Write(5, 'Wij verzoeken u vriendelijk het factuurbedrag binnen '.$params['invoicedays'].' dagen na factuurdatum over te maken op bankrekening');
+        $pdf->Ln(5);
+        $pdf->SetX(33);
+        $pdf->Write(2, $params['iban'].' tnv '.$params['iban_name'].' o.v.v. uw debiteurnummer en factuurnummer.');
+        break;
+
+      case 'cash':
+        $pdf->SetX(17);
+        $pdf->Write(5, 'Deze factuur is reeds per contant voldaan.');
+        $pdf->Ln(5);
+        break;
+
+      case 'pin':
+        $pdf->SetX(17);
+        $pdf->Write(5, 'Deze factuur is reeds per pin-betaling voldaan.');
+        $pdf->Ln(5);
+        break;
+    }
+
 
     if (!is_dir(getcwd().'/invoices')) {
       mkdir(getcwd().'/invoices', 0777);
@@ -702,6 +948,10 @@ class MainActions extends Actions {
 
     $pdf->SetY(230);
     $pdf->SetX(120);
+    $pdf->Write(5, 'Werkzaamheden gereed: '.$params['ready']?'Ja':'Nee');
+
+    $pdf->SetY(250);
+    $pdf->SetX(120);
     $pdf->Write(5, 'Opmerkingen:');
     $pdf->Ln(5);
     $pdf->SetX(120);
@@ -790,7 +1040,7 @@ Schimmelweg 395
 
     $user_id = Registry::get('user_id');
     $user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
-    $resource_id = substr($user->xid, 9);
+    $resource_id = $user->resourceId;
     $oa = Registry::get('oa_api');
     $agenda = Registry::get('oa_agenda');
     $appointments = $oa->sendRequest('getAppointments', array(
@@ -825,6 +1075,8 @@ Schimmelweg 395
           $json_appointments[$appointment['Id']]['city'] = $consumer['City'];
           $json_appointments[$appointment['Id']]['phone'] = $consumer['Phone'];
           $json_appointments[$appointment['Id']]['email'] = $consumer['Email'];
+          $json_appointments[$appointment['Id']]['debitor'] = '';
+          // todo: load custom fields here as well, like brand and serial of burners
         }
       }
     }

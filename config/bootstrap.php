@@ -13,7 +13,7 @@ error_reporting(E_ALL);
 require('bootstrap-cli.php');
 
 if (!isset($_COOKIE['xid_id'])) {
-  $user_id = time().rand(1000000,9999999);
+  $user_id = 'native'.time().rand(1000000,9999999);
 }
 else if (isset($_GET['ju'])) {
   $user_id = $_GET['ju'];
@@ -26,7 +26,7 @@ if (!$current_user) {
   $current_user = new User;
   $current_user->firstName = 'Temp';
   $current_user->lastName = 'user';
-  $current_user->xid = 'native'.$user_id;
+  $current_user->xid = $user_id;
   $current_user->save();
   setcookie('xid_id', $current_user->xid, strtotime('+1 year'), '/');
 }
@@ -119,6 +119,12 @@ if (isset($device_info['device'])) {
   }
 }
 
+
+if (isset($_GET['device'])) {
+  // device info is saved above, redirect to cachable page
+  header('Location: /main/index');
+  exit;
+}
 $action = Route::resolve();
 /*if (is_numeric($user_id) && !in_array($action['action'], array('signature','imagecapture','debug'))) {
   $action = array('module' => 'main', 'action' => 'index', 'params' => array());

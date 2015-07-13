@@ -1,361 +1,5 @@
-var inToggleSidebar = false;
-var back_id = 1;
-var back_nested_id = null;
 var internal_order_counter = 0;
-
-function toggleSidebar(which, force)
-{
-    if (inToggleSidebar && !force) return;
-
-    inToggleSidebar = true;
-    setTimeout(function() { inToggleSidebar = false; }, 700);
-
-    if (which =='sidebar-left' && $('sidebar-right').hasClassName('active')) {
-        $('sidebar-right').removeClassName('active');
-    }
-    if (which =='sidebar-right' && $('sidebar-left').hasClassName('active')) {
-        $('sidebar-left').removeClassName('active');
-    }
-    if ($(which).hasClassName('active')) {
-        $(which).removeClassName('active');
-    }
-    else {
-        $(which+'-inner').scrollTop = 0;
-        $(which).addClassName('active');
-    }
-
-    if (which =='sidebar-right') {
-        refreshChat(null, true);
-        //$('chat-count').style.display = 'none';
-    }
-
-    if (which =='sidebar-left') {
-        Workorder.updateWorkorderCount();
-    }
-    //alert(which);
-}
-
-function clearSidebars()
-{
-    //$('sidebar-left').removeClassName('active');
-    //$('sidebar-right').removeClassName('active');
-}
-
-function redirect(uri) {
-    if(navigator.userAgent.match(/Android/i))
-        document.location=uri;
-    else
-        window.location.replace(uri);
-}
-
-Event.observe(window, 'load', function() {
-
-    if(isAndroid) {
-        var hasSound = Android.getSetting('sound')=="1";
-        var hasVibrate = Android.getSetting('vibrate')=="1";
-        var hasNotifications = Android.getSetting('notifications')=="1";
-        $('notifications').checked = hasNotifications ? 'checked' : '';
-        $('notifications-vibrate').checked = hasVibrate ? 'checked' : '';
-        $('notifications-sound').checked = hasSound ? 'checked' : '';
-        $('notifications-vibrate').disabled = hasNotifications ? '' : 'disabled';
-        $('notifications-sound').disabled = hasNotifications ? '' : 'disabled';
-    }
-
-    if(isIos) {
-        var iOS = new iOSWrapper;
-        var hasSound = iOS.getSetting('sound')=="1";
-        var hasVibrate = iOS.getSetting('vibrate')=="1";
-        var hasNotifications = iOS.getSetting('notifications')=="1";
-        $('notifications').checked = hasNotifications ? 'checked' : '';
-        $('notifications-vibrate').checked = hasVibrate ? 'checked' : '';
-        $('notifications-sound').checked = hasSound ? 'checked' : '';
-        $('notifications-vibrate').disabled = hasNotifications ? '' : 'disabled';
-        $('notifications-sound').disabled = hasNotifications ? '' : 'disabled';
-    }
-
-    var swipeMain = $('body');
-    var swipeMainObj = new Swipeable(swipeMain);
-
-    var w = $('body').getWidth();
-
-    // menu left
-    swipeMain.observe("swipe:right", function () {
-        p = swipeMainObj.lastStartX / (w / 100);
-
-        if (p < 20) {
-            if ($('sidebar-right').hasClassName('active')) {
-                toggleSidebar('sidebar-right');
-            }
-            else if (!$('sidebar-left').hasClassName('active')) {
-                toggleSidebar('sidebar-left');
-            }
-        }
-    });
-
-    if ($('sidebar-left')) {
-        var swipeSidebarLeft = $('sidebar-left');
-        var swipeSidebarLeftObj = new Swipeable(swipeSidebarLeft);
-        swipeSidebarLeft.observe("swipe:left", function () {
-            p = swipeSidebarLeftObj.lastStartX / (w / 100);
-            if (p > 80) {
-                if ($('sidebar-left').hasClassName('active')) {
-                    if (!inChat) {
-                        toggleSidebar('sidebar-left');
-                    }
-                    inChat = false;
-                }
-            }
-        });
-    }
-
-    var inChat = false;
-
-     // menu right
-     swipeMain.observe("swipe:left",function() {
-         p = swipeMainObj.lastStartX / (w /100);
-
-         if (p > 80) {
-             if( $('sidebar-left').hasClassName('active')) {
-                toggleSidebar('sidebar-left');
-             }
-             else if ( !$('sidebar-right').hasClassName('active')) {
-                toggleSidebar('sidebar-right');
-             }
-         }
-     });
-
-
-     if($('sidebar-right')) {
-         var swipeSidebarRight = $('sidebar-right');
-         var swipeSidebarRightObj = new Swipeable(swipeSidebarRight);
-         swipeSidebarRight.observe("swipe:right", function () {
-             p = swipeSidebarRightObj.lastStartX / (w / 100);
-             if (p < 20) {
-                 if ($('sidebar-right').hasClassName('active')) {
-                     if (!inChat) {
-                         toggleSidebar('sidebar-right');
-                     }
-                     inChat = false;
-                 }
-             }
-         });
-     }
-
-    Event.observe($('chat-enter'), 'click', function() {
-        inChat = true;
-        sendChat();
-    });
-    Event.observe($('chat-enter'), 'touchstart', function() {
-        inChat = true;
-        sendChat();
-    });
-
-    if($('overlay')) {
-        renderDataset();
-    }
-
-    setTimeout(function() {
-        loadDataset();
-    }, 30000);
-
-    //toggleSidebar('sidebar-left');
-    //goPage(4);
-    refreshChat();
-
-    Event.observe($('workorder-collapse-btn'), 'click', function() {
-        if ($(this).hasClassName('fa-caret-down')) {
-            $(this).removeClassName('fa-caret-down');
-            $(this).addClassName('fa-caret-up');
-            Effect.BlindDown('workorder-details', { duration: 0.3 });
-        }
-        else {
-            $(this).addClassName('fa-caret-down');
-            $(this).removeClassName('fa-caret-up');
-            Effect.BlindUp('workorder-details', { duration: 0.3 });
-        }
-    });
-
-    Event.observe($('new-workorder'), 'click', function() {
-        Workorder.createWorkorder();
-    });
-
-    Event.observe($('date-prev-app'), 'click', function() {
-        today = new Date();
-        current = new Date(current_date);
-        yesterday = new Date(current_date);
-        yesterday.setDate(current.getDate() - 1);
-
-        dd = yesterday.getDate()+'-'+(yesterday.getMonth()+1)+'-'+yesterday.getFullYear();
-        ds = today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
-        if (dd == ds) {
-            $('date-current-app').innerHTML = 'Vandaag';
-        }
-        else {
-            $('date-current-app').innerHTML = dd;
-        }
-
-        xd = yesterday.getDate();
-        if(xd<10){xd='0'+xd}
-        xm = yesterday.getMonth() + 1;
-        if(xm<10){xm='0'+xm}
-
-        str = yesterday.getFullYear()+'-'+xm+'-'+xd;
-        current_date = str;
-        Workorder.loadAppointmentForDate(current_date);
-    });
-
-    Event.observe($('date-next-app'), 'click', function() {
-        today = new Date();
-        current = new Date(current_date);
-        tommorow = new Date(current_date);
-        tommorow.setDate(current.getDate() + 1);
-
-        dd = tommorow.getDate()+'-'+(tommorow.getMonth()+1)+'-'+tommorow.getFullYear();
-        ds = today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
-        if (dd == ds) {
-            $('date-current-app').innerHTML = 'Vandaag';
-        }
-        else {
-            $('date-current-app').innerHTML = dd;
-        }
-
-        xd = tommorow.getDate();
-        if(xd<10){xd='0'+xd}
-        xm = tommorow.getMonth() + 1;
-        if(xm<10){xm='0'+xm}
-
-        str = tommorow.getFullYear()+'-'+xm+'-'+xd;
-        current_date = str;
-        Workorder.loadAppointmentForDate(current_date);
-    });
-
-    $$('.search input').each(function(s,i) {
-        Event.observe($(s), 'keyup', function() {
-            Workorder.search(this.id, this.value);
-        });
-
-        Event.observe($(s), 'blur', function() {
-            Workorder.searchRemove();
-        });
-    });
-
-});
-
-function sendChat()
-{
-    if ($('chat-text').value != '') {
-        refreshChat($('chat-text').value);
-        $('chat-text').value = '';
-    }
-}
-
-function refreshChat(new_chat, read)
-{
-    new Ajax.Request('/main/groupchat?ju='+user_id, {
-        parameters: {
-            chat: new_chat,
-            read: read
-        },
-        onSuccess: function(transport) {
-            $('chat-stream').innerHTML = transport.responseJSON.html;
-            if (transport.responseJSON.count > 0) {
-                $('chat-count-value').innerHTML = transport.responseJSON.count;
-                $('chat-count').style.display = 'block';
-            }
-            else {
-                $('chat-count').style.display = 'none';
-            }
-
-        }
-    });
-    setTimeout(refreshChat, 15000);
-}
-
-function loadDataset()
-{
-    new Ajax.Request('/main/index?ju='+user_id, {
-        onSuccess: function(transport) {
-
-            renderDataset();
-        }
-    });
-
-    setTimeout(function() {
-        loadDataset();
-    }, 30000);
-}
-
-function renderDataset()
-{
-
-}
-function goPage(page_id, prev_id)
-{
-    Workorder.hideLoader();
-    $('container').scrollTo();
-
-    for(i=1;i<19;i++) {
-        if (!$('page-'+i)) continue;
-        if (page_id == i) {
-            $('page-'+i).addClassName('active');
-        }
-        else {
-            $('page-'+i).removeClassName('active');
-        }
-    }
-
-    if (prev_id > 0) {
-        $('back-button').show();
-        $('menu-button').hide();
-        back_id = prev_id;
-    }
-    else if (back_nested_id > 0) {
-        $('back-button').show();
-        $('menu-button').hide();
-        back_id = back_nested_id;
-        back_nested_id = null;
-    }
-    else {
-        back_id = 1;
-        $('back-button').hide();
-        $('menu-button').show();
-    }
-}
-
-function setActive(which)
-{
-    $$('#sidebar-nav li').each(function(s,i) {
-        $(s).removeClassName('active-item');
-    });
-    $(which).addClassName('active-item');
-}
-
-function imageSelected(image)
-{
-    Workorder.addPhoto(image);
-}
-
-function toast(message) {
-    if (isIos) {
-        iOS.showToast(message);
-    }
-    else if (isAndroid) {
-        Android.showToast(message);
-    }
-    else {
-       alert(message);
-    }
-}
-
-function isMoney(v) {
-    console.log('implement isMoney');
-    return true;
-}
-
-function isVAT(vat){
-    if (vat != 21 && vat != 6) return false;
-    return true;
-}
+var smart_inputs = [];
 
 window.workorderObject = Class.create({
     workorders: [],
@@ -369,6 +13,167 @@ window.workorderObject = Class.create({
     currentShortlist: {},
     shortlistLevel: 0,
     searchDelay: 0,
+    cdate: '',
+
+    initialize: function(config)
+    {
+        Event.observe($('workorder-collapse-btn'), 'click', function() {
+            if ($(this).hasClassName('fa-caret-down')) {
+                $(this).removeClassName('fa-caret-down');
+                $(this).addClassName('fa-caret-up');
+                Effect.BlindDown('workorder-details', { duration: 0.3 });
+            }
+            else {
+                $(this).addClassName('fa-caret-down');
+                $(this).removeClassName('fa-caret-up');
+                Effect.BlindUp('workorder-details', { duration: 0.3 });
+            }
+        });
+
+        Event.observe($('new-workorder'), 'click', function() {
+            Workorder.createWorkorder();
+        });
+
+        Event.observe($('date-prev-app'), 'click', function() {
+            today = new Date();
+            current = new Date(current_date);
+            yesterday = new Date(current_date);
+            yesterday.setDate(current.getDate() - 1);
+
+            dd = yesterday.getDate()+'-'+(yesterday.getMonth()+1)+'-'+yesterday.getFullYear();
+            ds = today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
+            if (dd == ds) {
+                $('date-current-app').innerHTML = 'Vandaag';
+            }
+            else {
+                $('date-current-app').innerHTML = dd;
+            }
+
+            xd = yesterday.getDate();
+            if(xd<10){xd='0'+xd}
+            xm = yesterday.getMonth() + 1;
+            if(xm<10){xm='0'+xm}
+
+            str = yesterday.getFullYear()+'-'+xm+'-'+xd;
+            current_date = str;
+            Workorder.loadAppointmentForDate(current_date);
+        });
+
+        Event.observe($('date-next-app'), 'click', function() {
+            today = new Date();
+            current = new Date(current_date);
+            tommorow = new Date(current_date);
+            tommorow.setDate(current.getDate() + 1);
+
+            dd = tommorow.getDate()+'-'+(tommorow.getMonth()+1)+'-'+tommorow.getFullYear();
+            ds = today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
+            if (dd == ds) {
+                $('date-current-app').innerHTML = 'Vandaag';
+            }
+            else {
+                $('date-current-app').innerHTML = dd;
+            }
+
+            xd = tommorow.getDate();
+            if(xd<10){xd='0'+xd}
+            xm = tommorow.getMonth() + 1;
+            if(xm<10){xm='0'+xm}
+
+            str = tommorow.getFullYear()+'-'+xm+'-'+xd;
+            current_date = str;
+            Workorder.loadAppointmentForDate(current_date);
+        });
+
+
+
+
+        Event.observe($('wo-date-prev-app'), 'click', function() {
+            today = new Date();
+            current = new Date(current_date);
+            yesterday = new Date(current_date);
+            yesterday.setDate(current.getDate() - 1);
+
+            dd = yesterday.getDate()+'-'+(yesterday.getMonth()+1)+'-'+yesterday.getFullYear();
+            ds = today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
+            if (dd == ds) {
+                $('wo-date-current-app').innerHTML = 'Vandaag';
+                $('new-workorder').show();
+            }
+            else {
+                $('wo-date-current-app').innerHTML = dd;
+                $('new-workorder').hide();
+            }
+
+            xd = yesterday.getDate();
+            if(xd<10){xd='0'+xd}
+            xm = yesterday.getMonth() + 1;
+            if(xm<10){xm='0'+xm}
+
+            str = yesterday.getFullYear()+'-'+xm+'-'+xd;
+            current_date = str;
+            Workorder.loadWorkordersForDate(current_date);
+        });
+
+        Event.observe($('wo-date-next-app'), 'click', function() {
+            today = new Date();
+            current = new Date(current_date);
+            tommorow = new Date(current_date);
+            tommorow.setDate(current.getDate() + 1);
+
+            dd = tommorow.getDate()+'-'+(tommorow.getMonth()+1)+'-'+tommorow.getFullYear();
+            ds = today.getDate()+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
+            if (dd == ds) {
+                $('wo-date-current-app').innerHTML = 'Vandaag';
+                $('new-workorder').show();
+            }
+            else {
+                $('wo-date-current-app').innerHTML = dd;
+                $('new-workorder').hide();
+            }
+
+            xd = tommorow.getDate();
+            if(xd<10){xd='0'+xd}
+            xm = tommorow.getMonth() + 1;
+            if(xm<10){xm='0'+xm}
+
+            str = tommorow.getFullYear()+'-'+xm+'-'+xd;
+            current_date = str;
+            Workorder.loadWorkordersForDate(current_date);
+        });
+
+
+        $$('.search input').each(function(s,i) {
+            Event.observe($(s), 'keyup', function() {
+                Workorder.search(this.id, this.value);
+            });
+
+            Event.observe($(s), 'blur', function() {
+                Workorder.searchRemove();
+            });
+        });
+
+        $$('.smart-input').each(function(s,i) {
+            default_value = $(s).value;
+            smart_inputs[$(s).id] = default_value;
+            Event.observe($(s), 'focus' , function() {
+                if ($(this).hasClassName('empty')) {
+                    $(this).removeClassName('empty');
+                    $(this).value = '';
+                }
+            });
+
+            Event.observe($(s), 'blur' , function() {
+                if ($(this).value == '') {
+                    $(this).addClassName('empty');
+                    $(this).value = smart_inputs[$(this).id];
+                }
+            });
+        });
+
+        this.loadLocal();
+
+
+    },
 
     startWork: function () {
         // store current timestamp
@@ -380,7 +185,7 @@ window.workorderObject = Class.create({
         $('sn-7').removeClassName('inactive');
 
         wo = this.loadWorkorder(this.current_workorder);
-        wo.startWork = d.getHours() + ':'+ d.getMinutes();
+        wo.startWork = d.getHours() + ':'+ ('0'+d.getMinutes()).slice(-2);
 
         this.setTmpWorkorder(wo);
         this.saveWorkorder();
@@ -401,7 +206,7 @@ window.workorderObject = Class.create({
         $('sn-7').innerHTML = 'Afgerond om '+ d.getHours() + ':'+ ('0'+d.getMinutes()).slice(-2)+'<span class="fa fa-check"></span>';
 
         wo = this.loadWorkorder(this.current_workorder);
-        wo.finishWork = d.getHours() + ':'+ d.getMinutes();
+        wo.finishWork = d.getHours() + ':'+ ('0'+d.getMinutes()).slice(-2);
 
         timeval1 = wo.startWork.split(':');
         tv1 = (parseInt(timeval1[0])*60) + parseInt(timeval1[1]);
@@ -439,32 +244,59 @@ window.workorderObject = Class.create({
         this.appointments = appointments;
     },
 
-    loadAppointmentForDate: function(date)
+    loadAppointmentFromLocalStorage: function(date)
     {
-        this.showLoader();
+        apps = localStorage.getItem('apps_'+date);
+        if (apps) {
+            json_apps = JSON.parse(apps);
+
+            Workorder.apps_in_date[date] = [];
+            for (app_id in json_apps) {
+
+                json_apps[app_id]['orderrows'] = JSON.parse(json_apps[app_id]['orderrows']);
+                Workorder.appointments[app_id] = json_apps[app_id];
+
+                if (!Workorder.apps_in_date[date]) {
+                    Workorder.apps_in_date[date] = [];
+                }
+                $(Workorder.apps_in_date[date]).push(app_id);
+            }
+
+            Workorder.renderAppointmentsForDate(date);
+        }
+
+    },
+
+    loadAppointmentsFromBackend: function(date)
+    {
+        this.cdate = date;
         new Ajax.Request('/main/loadAppointments', {
             parameters: {
                 date: date
             },
             onSuccess: function(transport) {
-                for ( date in transport.responseJSON) {
-                    for (app_id in transport.responseJSON[date]) {
-                        Workorder.appointments[app_id] = transport.responseJSON[date][app_id];
 
-                        if (!Workorder.apps_in_date[date]) {
-                            Workorder.apps_in_date[date] = [];
-                        }
-                        $(Workorder.apps_in_date[date]).push(app_id);
-                    }
+                for ( date in transport.responseJSON) {
+                    localStorage.setItem('apps_20'+date, JSON.stringify(transport.responseJSON[date]));
                 }
-                Workorder.renderAppointmentsForDate(date);
-                Workorder.hideLoader();
+                Workorder.loadAppointmentFromLocalStorage(Workorder.cdate);
+                setTimeout(function() {
+                    Workorder.loadAppointmentsFromBackend(Workorder.cdate);
+                },300000); // 5 minutes
+
             },
             onFailure: function()
             {
-                Workorder.hideLoader();
             }
         });
+    },
+
+    loadAppointmentForDate: function(date)
+    {
+        this.cdate = date;
+        this.loadAppointmentFromLocalStorage(date);
+        this.loadAppointmentsFromBackend(date);
+
     },
 
     showLoader: function() {
@@ -518,32 +350,16 @@ window.workorderObject = Class.create({
         });
     },
 
-    /*
-
-     <li onclick="Workorder.loadAppointment(<?php echo $appointment['Id']; ?>);goPage(3,2);">
-     <?php echo $appointment['Name']; ?><br>
-     <?php echo date('H:i', strtotime($appointment['StartTime'])); ?>
-     - <?php echo date('H:i', strtotime($appointment['FinishTime'])); ?>
-     <?php if ($consumer) {
-
-     ?>
-     <span><?php echo $consumer['FirstName']; ?> <?php echo $consumer['LastName']; ?></span>
-     <?php if ($consumer['Street']) { ?><span><?php echo $consumer['Street']; ?> <?php echo $consumer['HouseNr']; ?><?php echo $consumer['HouseNrAddition']; ?>
-     <br>
-     <?php echo $consumer['ZipCode']; ?> <?php echo $consumer['City']; ?></span><?php } ?>
-     <?php if ($consumer['MobilePhone']) { ?><span><?php echo $consumer['MobilePhone']; ?></span><?php } ?>
-     <?php if ($consumer['Phone']) { ?><span><?php echo $consumer['Phone']; ?>
-     </span><?php } ?>
-     <?php if ($consumer['Email']) { ?><span><?php echo $consumer['Email']; ?>
-     </span><?php } ?>
-     <?php } ?>
-     <i class="fa fa-chevron-right"></i>
-     </li>
-
-     */
     loadAppointment: function (appointment_id) {
         if(this.appointments[appointment_id]) {
             app = this.appointments[appointment_id];
+
+            date = new Date();
+            m = date.getMonth()+1;
+            if (m < 10) m = '0'+m;
+            d = date.getDate();
+            if (d < 10) d = '0'+d;
+            wo_date = date.getFullYear()+'-'+m+'-'+d;
 
             if(!this.workorders[appointment_id]) {
                 wo = {
@@ -568,7 +384,10 @@ window.workorderObject = Class.create({
                     ],
                     photos: [],
                     signature: null,
-                    payment: {}
+                    payment: {},
+                    ready: false,
+                    finished: false,
+                    date: wo_date
                 };
 
                 this.setWorkorder(wo, appointment_id);
@@ -633,11 +452,20 @@ window.workorderObject = Class.create({
                 $('sn-2').addClassName('readable');
                 $('sn-2').innerHTML = 'Gestart om '+ this.tmp_workorder.startWork+'<span class="fa fa-check"></span>';
                 if (this.tmp_workorder.finishWork) {
+                    $('sn-7').innerHTML = 'Afgerond om '+ this.tmp_workorder.finishWork+'<span class="fa fa-check"></span>';
                     $('sn-7').addClassName('inactive');
                     $('sn-7').addClassName('readable');
-                    $('sn-3').removeClassName('inactive');
-                    $('sn-4').removeClassName('inactive');
-                    $('sn-8').removeClassName('inactive');
+                    if (this.tmp_workorder.finished) {
+                        $('sn-3').addClassName('inactive');
+                        $('sn-8').addClassName('inactive');
+                        $('sn-6').addClassName('inactive');
+                        $('sn-4').removeClassName('inactive');
+                    }
+                    else {
+                        $('sn-3').removeClassName('inactive');
+                        $('sn-4').removeClassName('inactive');
+                        $('sn-8').removeClassName('inactive');
+                    }
                 }
                 else {
                     $('sn-7').addClassName('active');
@@ -662,8 +490,10 @@ window.workorderObject = Class.create({
 
     setReady: function(ready)
     {
-      // todo: set marked as ready
-        console.log('Mark as ready');
+        wo = this.getTmpWorkorder();
+        wo.ready = ready;
+        this.setTmpWorkorder(wo);
+        this.saveWorkorder();
     },
 
     finalizeWorkorder: function()
@@ -679,11 +509,30 @@ window.workorderObject = Class.create({
         goPage(5,3);
     },
 
+    deleteWorkorder: function()
+    {
+        if(confirm('Weet je zeker dat je deze werkbon wilt verwijderen?')) {
+            delete this.workorders[this.current_workorder];
+            this.current_workorder = null;
+
+            this.saveLocal();
+            page_stack = [16];
+            goPage(16);
+        }
+    },
+
     createWorkorder: function() {
         internal_order_counter++;
         str = "" + internal_order_counter
         pad = "0000000"
         workorder = pad.substring(0, pad.length - str.length) + str;
+
+        date = new Date();
+        m = date.getMonth()+1;
+        if (m < 10) m = '0'+m;
+        d = date.getDate();
+        if (d < 10) d = '0'+d;
+        wo_date = date.getFullYear()+'-'+m+'-'+d;
 
         app = {
             id: internal_order_counter,
@@ -713,7 +562,10 @@ window.workorderObject = Class.create({
             ],
             photos: [],
             signature: null,
-            payment: {}
+            payment: {},
+            finished: false,
+            ready: false,
+            date: wo_date
         };
 
         this.appointments[internal_order_counter] = app;
@@ -724,11 +576,58 @@ window.workorderObject = Class.create({
 
     saveWorkorder: function() {
         this.workorders[this.current_workorder] = this.tmp_workorder;
+        this.saveLocal();
+    },
+
+    saveLocal: function() {
+        if(localStorage.getItem('workorders')) {
+            workorder_ids  = [];
+        }
+        else {
+            workorder_ids  = JSON.parse(localStorage.getItem('workorders'));
+            if (!workorder_ids) {
+                workorder_ids  = [];
+            }
+        }
+
+        for (i in this.workorders) {
+            if (this.workorders.hasOwnProperty(i)) {
+                localStorage.setItem('workorder_'+i, Object.toJSON(this.workorders[i]));
+                workorder_ids.push(i);
+            }
+        }
+
+        localStorage.setItem('workorders', Object.toJSON(workorder_ids));
+        localStorage.setItem('tmp_workorder', Object.toJSON(this.tmp_workorder));
+    },
+
+    loadLocal: function() {
+        wos = localStorage.getItem('workorders');
+        if (wos) {
+            wo = JSON.parse(wos);
+            if (wo) {
+                for (i in wo) {
+                    if (wo.hasOwnProperty(i)) {
+                        wo_id = wo[i];
+                        workorder = localStorage.getItem('workorder_' + wo_id);
+                        if (workorder) {
+                            this.workorders[wo_id] = JSON.parse(workorder);
+                        }
+                    }
+                }
+            }
+        }
+        two = JSON.parse(localStorage.getItem('tmp_workorder'));
+        if (two) {
+            this.tmp_workorder = two;
+        }
+
     },
 
     setWorkorder: function(workorder, workorder_id) {
         this.workorders[workorder_id] = workorder;
         this.tmp_workorder = workorder;
+        this.saveLocal();
     },
 
     getWorkorder: function()
@@ -745,11 +644,13 @@ window.workorderObject = Class.create({
 
     setTmpWorkorder: function(workorder) {
         this.tmp_workorder = workorder;
+        this.saveLocal();
     },
 
     showOrderrows: function()
     {
         wo = this.getTmpWorkorder();
+        var total = 0;
         if(wo.rows.length > 0) {
             $('no-orderrows').hide();
             $('orderrows').show();
@@ -757,51 +658,32 @@ window.workorderObject = Class.create({
             $(wo.rows).each(function(s,i) {
                 var li = new Element('li');
                 li.innerHTML = s.desc + '<br>';
-                li.id = 'row-cnt-'+i;
-                li.addClassName('row-type-'+ s.type);
-                switch(s.type) {
+                li.id = 'row-cnt-' + i;
+                li.addClassName('row-type-' + s.type);
+                switch (s.type) {
                     case 'activity':
-                      if  (s.cost != '0,00')
-                        {
+                        if (s.cost != '0,00') {
                             var span = new Element('span');
                             span.innerHTML = '&euro; ' + parseFloat(s.cost).toFixed(2).replace('.', ',');
+                            total += parseFloat(s.cost);
                             li.insert(span);
                         }
                         break;
                     case 'hours':
                         var span = new Element('span');
-                        span.innerHTML = s.minutes+'m';
+                        span.innerHTML = s.minutes + 'm';
                         li.insert(span);
 
                         break;
                     case 'product':
-                        if  (s.cost != '0,00' && s.cost != '')
-                        {
+                        if (s.cost != '0,00' && s.cost != '') {
                             var span = new Element('span');
-                            span.innerHTML = s.amount+' x &euro; ' + parseFloat(s.cost).toFixed(2).replace('.', ',');
+                            span.innerHTML = s.amount + ' x &euro; ' + parseFloat(s.cost).toFixed(2).replace('.', ',');
+                            total += (s.amount * parseFloat(s.cost));
                             li.insert(span);
                         }
                         break;
                 }
-                var btn1 = new Element('button');
-                btn1.innerHTML = 'Bewerken';
-                Event.observe(btn1, 'click', function() {
-                    row = $(this).parentNode.id.substr(8);
-                    wo = Workorder.getTmpWorkorder();
-                    r = wo.rows[row];
-                    switch(r.type) {
-                        case 'product':
-                            Workorder.editProduct(r, row);
-                            break;
-                        case 'activity':
-                            Workorder.editActivity(r, row);
-                            break;
-                        case 'hours':
-                            Workorder.editHours(r, row);
-                            break;
-                    }
-                });
-                li.insert(btn1);
 
                 var btn2 = new Element('button');
                 btn2.innerHTML = 'Verwijderen';
@@ -814,6 +696,28 @@ window.workorderObject = Class.create({
 
                 });
                 li.insert(btn2);
+
+                if (!s.locked) {
+                    var btn1 = new Element('button');
+                    btn1.innerHTML = 'Bewerken';
+                    Event.observe(btn1, 'click', function () {
+                        row = $(this).parentNode.id.substr(8);
+                        wo = Workorder.getTmpWorkorder();
+                        r = wo.rows[row];
+                        switch (r.type) {
+                            case 'product':
+                                Workorder.editProduct(r, row);
+                                break;
+                            case 'activity':
+                                Workorder.editActivity(r, row);
+                                break;
+                            case 'hours':
+                                Workorder.editHours(r, row);
+                                break;
+                        }
+                    });
+                    li.insert(btn1);
+                }
 
                 Event.observe(li, 'click', function() {
                     $$('#orderrows li button').each(function(s, i) {
@@ -831,9 +735,18 @@ window.workorderObject = Class.create({
                 $(s).hide(); // hide all buttons, also of other rows
             });
 
+            var li = new Element('li');
+            li.innerHTML = 'Totaal<br>';
+            var span = new Element('span');
+            span.innerHTML = '&euro; '+parseFloat(total).toFixed(2).replace('.', ',');
+            li.addClassName('row-total');
+            li.insert(span);
             $('workorder-summary').innerHTML = $('orderrows').innerHTML;
-            $('invoice-summary').innerHTML = $('orderrows').innerHTML;
-            $('check-summary').innerHTML = $('orderrows').innerHTML;
+            $('workorder-summary').insert(li);
+
+            $('invoice-summary').innerHTML = $('workorder-summary').innerHTML;
+
+            $('check-summary').innerHTML = $('workorder-summary').innerHTML;
         }
         else {
             $('no-orderrows').show();
@@ -854,7 +767,11 @@ window.workorderObject = Class.create({
     {
         s = 0;
         for (k in this.workorders) {
-            if (this.workorders.hasOwnProperty(k)) s++;
+            if (this.workorders.hasOwnProperty(k)) {
+                if(!this.workorders[k].finished) {
+                    s++;
+                }
+            }
         }
         $('workorder-count').innerHTML = s;
     },
@@ -914,7 +831,8 @@ window.workorderObject = Class.create({
         r = {
             desc: which,
             cost: cost,
-            type: 'activity'
+            type: 'activity',
+            locked: true
         }
         wo = this.getTmpWorkorder();
         wo.rows.push(r);
@@ -1169,7 +1087,7 @@ window.workorderObject = Class.create({
         $('sn-6').addClassName('inactive');
         $('sn-6').addClassName('readable');
         $('sn-3').addClassName('inactive');
-        goPage(3);
+        goPage(9, 5);
     },
 
     addPhoto: function(image) {
@@ -1234,16 +1152,21 @@ window.workorderObject = Class.create({
         goPage(3);
     },
 
-    showWorkorders: function()
+    loadWorkordersForDate: function(date)
     {
         $('workorder-list').innerHTML = '';
-        s = 0;
-        for (k in this.workorders) {
-            if (this.workorders.hasOwnProperty(k)) s++;
-        }
+        var s = 0;
+        var ddate = date;
+        $(this.workorders).each(function (x, i) {
+            if(x.date == ddate) {
+                s++;
+            }
+        });
         if (s > 0) {
 
             $(this.workorders).each(function (s, i) {
+                if (s.date != ddate) return;
+
                 var li = new Element('li');
                 li.innerHTML = s.app.orderrows[0] + '<br>' + s.app.workorder + '<br>' + s.app.time + '<i class="fa fa-chevron-right"></i>';
                 if (s.finished) {
@@ -1262,6 +1185,18 @@ window.workorderObject = Class.create({
         }
     },
 
+    showWorkorders: function()
+    {
+        date = new Date();
+        m = date.getMonth()+1;
+        if (m < 10) m = '0'+m;
+        d = date.getDate();
+        if (d < 10) d = '0'+d;
+        wo_date = date.getFullYear()+'-'+m+'-'+d;
+
+        this.loadWorkordersForDate(wo_date);
+    },
+
     calculateInvoice: function()
     {
         $('invoice-summary').innerHTML = $('workorder-summary').innerHTML;
@@ -1269,21 +1204,13 @@ window.workorderObject = Class.create({
 
     startPayment: function(paymethod)
     {
-        /*
-         app: app,
-         startWork: null,
-         finishWork: null,
-         startTravel: null,
-         finishTravel: null,
-         rows: [
 
-        ],
-        photos: [],
-            signature: null,
-        payment: {}
-         */
         this.showLoader();
         var wo = this.getWorkorder();
+        wo.payment = { paymethod: paymethod };
+        this.setWorkorder(wo, this.current_workorder);
+        this.setTmpWorkorder(wo);
+
         new Ajax.Request('/main/save', {
             parameters: {
                 app: Object.toJSON(wo.app),
@@ -1292,6 +1219,7 @@ window.workorderObject = Class.create({
                 startTravel: wo.startTravel,
                 finishTravel: wo.finishTravel,
                 remarks: wo.remarks,
+                ready: wo.ready,
                 rows: Object.toJSON(wo.rows),
                 photos: Object.toJSON(wo.photos),
                 signature: wo.signature,
@@ -1302,6 +1230,7 @@ window.workorderObject = Class.create({
                     wo.finished = true;
                     Workorder.setWorkorder(wo, Workorder.current_workorder);
                     Workorder.showWorkorders();
+                    page_stack = [];
                     goPage(16);
                 }
             }
@@ -1315,7 +1244,7 @@ window.workorderObject = Class.create({
         this.searchField = field;
         this.searchValue = value;
 
-        setTimeout(this.searchDo, 250);
+        setTimeout(this.searchDo, 500);
     },
 
     searchDo: function() {
@@ -1341,6 +1270,7 @@ window.workorderObject = Class.create({
                         Event.observe(li, 'click', function(event) {
                             for(i in Workorder.searchResults[this.id.substr(7)]['fields']) {
                                 $(i).value = Workorder.searchResults[this.id.substr(7)]['fields'][i];
+                                $(i).removeClassName('empty');
                             }
 
                             Element.remove($(this).parentNode.parentNode);
@@ -1367,26 +1297,8 @@ window.workorderObject = Class.create({
     }
 });
 
-var Workorder = new workorderObject;
-
+var Workorder;
 
 Event.observe(window, 'load', function() {
-var smart_inputs = [];
-$$('.smart-input').each(function(s,i) {
-    default_value = $(s).value;
-    smart_inputs[$(s).id] = default_value;
-    Event.observe($(s), 'focus' , function() {
-        if ($(this).hasClassName('empty')) {
-            $(this).removeClassName('empty');
-            $(this).value = '';
-        }
-    });
-
-    Event.observe($(s), 'blur' , function() {
-        if ($(this).value == '') {
-            $(this).addClassName('empty');
-            $(this).value = smart_inputs[$(this).id];
-        }
-    });
-});
+    Workorder = new workorderObject;
 });

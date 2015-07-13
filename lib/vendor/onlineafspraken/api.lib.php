@@ -40,7 +40,7 @@ class OAAPI {
     $records = array();
 
     $records['Debug']['Url'] = $url;
-    $records['Debug']['Response'] = $response;
+    //$records['Debug']['Response'] = $response;
 
     if ($xml->Objects) {
       foreach ($xml->Objects[0] as $k => $object) {
@@ -50,10 +50,14 @@ class OAAPI {
 
         $records[$k][] = $record;
       }
+      $records['Stats'] = $xml->Status->Stats;
     }
     else {
       foreach ($xml as $k => $object) {
-        if ($k == 'Status') continue;
+        if ($k == 'Status') {
+          $records['Debug']['Status'] = $object;
+          continue;
+        }
 
         foreach ($object as $key => $attributes) {
           $record[$key] = (string)$attributes;
