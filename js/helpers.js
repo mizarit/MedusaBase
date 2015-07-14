@@ -23,19 +23,29 @@ function redirect(uri) {
 
 function goBack()
 {
+    if (change_counter > 0) {
+        if (!confirm('Je hebt wijzigingen gemaakt die niet zijn opgeslagen. Wil je dit formulier verlaten?')) {
+            return;
+        }
+    }
+
     current_page = page_stack.pop();
     prev = page_stack[page_stack.length - 1];
     goPage(prev);
 }
 
-function goPage(page_id)
-{
+function goPage(page_id) {
+
+    change_counter = 0;
+
     Workorder.hideLoader();
     $('container').scrollTo();
 
     if (page_stack[page_stack.length - 1] != page_id) {
         page_stack.push(page_id);
     }
+
+
 
     for(i=1;i<19;i++) {
         if (!$('page-'+i)) continue;

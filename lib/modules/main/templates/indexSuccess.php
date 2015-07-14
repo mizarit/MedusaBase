@@ -13,7 +13,7 @@
   <div id="overlay"></div>
 
   <div id="header">
-    <h2 style="font-weight:bold;color:#fff;margin:0;position:relative;padding:0;text-transform: uppercase;font-size:2.1em;line-height:1.6em">
+    <h2 style="font-weight:bold;color:#fff;margin:0;position:relative;padding:0;text-transform: none;font-size:2.1em;line-height:1.6em">
       <?php //if ($iOS) { ?>
         <button class="fa fa-reorder delayed" id="menu-button" class="delayed" onclick="toggleSidebar('sidebar-left');" style="position:absolute;left:<?php echo $iOS? '-0.9':'0.1'; ?>em;color:#fff;top:<?php echo $iOS? '0.1':'0.15'; ?>em;font-size:1.2em;"></button>
         <!--<button class="fa fa-comments-o delayed" id="menu-button" class="delayed" onclick="toggleSidebar('sidebar-right', true);" style="position:absolute;right:<?php echo $iOS? '-0.9':'0.1'; ?>em;color:#fff;top:<?php echo $iOS? '0.1':'0.10'; ?>em;font-size:1.2em;"></button>-->
@@ -28,7 +28,7 @@
         <?php }*/ ?>
 
 
-      <?php //} ?>Medusa</h2>
+      <?php //} ?>iWerkbon</h2>
   </div>
   <?php require(dirname(__FILE__).'/_consumers.php'); ?>
   <?php require(dirname(__FILE__).'/_appointments.php'); ?>

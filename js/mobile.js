@@ -1,4 +1,5 @@
 var internal_order_counter = 0;
+var change_counter = 0;
 var smart_inputs = [];
 
 window.workorderObject = Class.create({
@@ -155,6 +156,11 @@ window.workorderObject = Class.create({
         $$('.smart-input').each(function(s,i) {
             default_value = $(s).value;
             smart_inputs[$(s).id] = default_value;
+
+            Event.observe($(s), 'change' , function() {
+                change_counter++;
+            });
+
             Event.observe($(s), 'focus' , function() {
                 if ($(this).hasClassName('empty')) {
                     $(this).removeClassName('empty');
@@ -1067,6 +1073,7 @@ window.workorderObject = Class.create({
         $('workorder-count').innerHTML = s;
 
         toast('Wijzigingen opgeslagen.');
+
         Workorder.showWorkorders();
         goPage(16);
     },
