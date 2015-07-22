@@ -6,7 +6,7 @@
   var isAndroid = <?php echo isset($_SESSION['isAndroid'])?'true':'false'; ?>;
   <?php $iOS = isset($_SESSION['isIos']); ?>
 </script>
-<div id="container"<?php //if($iOS) echo ' class="iOS"'; ?>">
+<div id="container<?php //if($iOS) echo ' class="iOS"'; ?>">
 <?php require(dirname(__FILE__).'/_sidebarLeft.php'); ?>
 <?php require(dirname(__FILE__).'/_sidebarRight.php'); ?>
 <div id="main" onclick="clearSidebars();">

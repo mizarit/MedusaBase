@@ -3,11 +3,14 @@
 class OAAPI {
   public function __construct()
   {
+    $current_user = User::model()->findByAttributes(new Criteria(array('xid' => Registry::get('user_id'))));
+    //var_dump($current_user->xid);
+    //var_dump($current_user->getApiServer());
+    //exit;
     if (!defined('API_SECRET')) {
-      $config = Registry::get('oa');
-      define('API_URL', $config['server']);
-      define('API_KEY', $config['api_key']);
-      define('API_SECRET', $config['api_secret']);
+      define('API_URL', $current_user->getApiServer());
+      define('API_KEY', $current_user->getApiKey());
+      define('API_SECRET', $current_user->getApiSecret());
     }
   }
   /**

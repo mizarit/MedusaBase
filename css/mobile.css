@@ -1081,3 +1081,34 @@ border: #fafafa 2px solid;
     background: #e93653;
     color: #fff;
 }
+
+#prompt {
+    position: fixed;
+    top: 3em;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    z-index: 1001;
+    display: none;
+}
+
+#prompt.active {
+    display: block;
+}
+
+#prompt div {
+    border: #0a2b1d 2px solid;
+    line-height: 2.5em;
+    font-size: 1.2em;
+    background: #1dc116;
+    color: #fff;
+}
+
+#prompt div button {
+    width: 49%;
+    font-size: 1em;
+    line-height: 1.5em;
+    color: #fff;
+    background: #56d600;
+    border: #fff 1px solid;
+}

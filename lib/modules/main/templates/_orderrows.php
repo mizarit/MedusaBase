@@ -26,7 +26,7 @@
     </div>
     <div class="form-row">
       <div class="form-label"><label for="activityrowcost">Kosten</label></div>
-      <input type="number" name="activityrowcost" id="activityrowcost" placeholder="0,00" value="0,00" class="smart-input empty small">
+      <input type="number" name="activityrowcost" id="activityrowcost" placeholder="0,00" value="0,00" step="0,05" lang="nl_NL"  class="smart-input empty small">
     </div>
   </div>
 
@@ -51,7 +51,7 @@
     </div>
     <div class="form-row">
       <div class="form-label"><label for="hoursrowminutes">Minuten</label></div>
-      <input type="number" name="hoursrowminutes" id="hoursrowminutes" placeholder="0" value="0" class="smart-input empty small">
+      <input type="number" name="hoursrowminutes" id="hoursrowminutes" placeholder="0" value="0" step="0,1" lang="nl_NL" class="smart-input empty small">
     </div>
   </div>
 
@@ -73,11 +73,11 @@
     </div>
     <div class="form-row">
       <div class="form-label"><label for="productrowcost">Prijs incl. BTW</label></div>
-      <input type="number" name="productrowcost" id="productrowcost" placeholder="0,00" value="0,00" class="smart-input empty small">
+      <input type="number" name="productrowcost" id="productrowcost" placeholder="0,00" value="0,00" step="0,05" lang="nl_NL" class="smart-input empty small">
     </div>
     <div class="form-row">
       <div class="form-label"><label for="productrowamount">Aantal</label></div>
-      <input type="number" name="productrowamount" id="productrowamount" placeholder="1" value="1" class="smart-input empty small">
+      <input type="number" name="productrowamount" id="productrowamount" placeholder="1" value="1" step="0,1" lang="nl_NL" class="smart-input empty small">
     </div>
     <!--<div class="form-row">
       <div class="form-label"><label for="productrowvat">BTW tarief</label></div>

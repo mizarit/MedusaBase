@@ -21,13 +21,21 @@ require('lib/model/Team.php');
 require('lib/model/TeamUser.php');
 require('lib/model/Message.php');
 require('lib/model/Notifier.php');
+require('lib/model/Company.php');
+require('lib/model/Setting.php');
+require('lib/model/Resource.php');
 
 $db_config = Registry::get('connection');
-
 $db = new mysqli($db_config['server'], $db_config['username'], $db_config['password'], $db_config['database']);
 mysqli_set_charset($db, 'utf8');
 mysqli_query($db, 'SET NAMES utf8mb4');
 Registry::set('db', $db);
+
+$db_site_config = Registry::get('connection_site');
+$db_site = new mysqli($db_site_config['server'], $db_site_config['username'], $db_site_config['password'], $db_site_config['database']);
+mysqli_set_charset($db_site, 'utf8');
+mysqli_query($db_site, 'SET NAMES utf8mb4');
+Registry::set('db_site', $db_site);
 
 require('lib/Tools.lib.php');
 require('lib/Route.lib.php');
@@ -36,10 +44,3 @@ require('lib/vendor/onlineafspraken/api.lib.php');
 require('lib/vendor/phpmailer/PHPMailerAutoload.php');
 require('lib/vendor/fpdf/FPDF.class.php');
 require('lib/vendor/PDF/PDF.lib.php');
-/*
-for ($i = 0; $i <10; $i++) {
-  $code = rand(100000,999999);
-  echo $code."<br>\n";
-}
-exit;
-*/

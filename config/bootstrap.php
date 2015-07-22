@@ -9,11 +9,14 @@ if (!isset($_SERVER['HTTPS'])) {
 ini_set('display_errors', true);
 error_reporting(E_ALL);
 
+$first_run = false;
+
 // core init
 require('bootstrap-cli.php');
 
 if (!isset($_COOKIE['xid_id'])) {
   $user_id = 'native'.time().rand(1000000,9999999);
+  $first_run = true;
 }
 else if (isset($_GET['ju'])) {
   $user_id = $_GET['ju'];
@@ -38,28 +41,11 @@ Registry::set('user_id',$user_id);
 $oa = new OAAPI();
 Registry::set('oa_api', $oa);
 $agendas = $oa->sendRequest('getAgendas');
-$agenda = array_shift($agendas['Agenda']);
-Registry::set('oa_agenda', $agenda);
-
-/*
-$agenda = Registry::get('oa_agenda');
-$appointments = $oa->sendRequest('getAppointments', array(
-  'AgendaId' => $agenda['Id'],
-  'ResourceId' => 1, // Blonde Dollie
-  'StartDate' => date('y-m-d'),
-  'EndDate' => date('y-m-d')
-));
-if (isset($appointments['Appointment'])) {
-  foreach ($appointments['Appointment'] as $appointment) {
-    echo $appointment['Name'];
-    echo $appointment['StartTime'];
-    echo $appointment['FinishTime'];
-    echo $appointment['BlockedTime'];
-    echo $appointment['CustomerId'];
-    //var_dump($appointment);
-  }
+if (isset($agendas['Agenda'])) {
+  $agenda = array_shift($agendas['Agenda']);
+  Registry::set('oa_agenda', $agenda);
 }
-*/
+
 $device_info = $_GET;
 if (!isset($_GET['device']) && isset($_SESSION['device_info'])) {
   $device_info = json_decode($_SESSION['device_info'], true);
@@ -123,6 +109,11 @@ if (isset($device_info['device'])) {
 if (isset($_GET['device'])) {
   // device info is saved above, redirect to cachable page
   header('Location: /main/index');
+  exit;
+}
+if ($first_run) {
+  //redirect using a script, because we need to send the cookie
+  echo "<script>window.location.href='/main/login';</script>";
   exit;
 }
 $action = Route::resolve();

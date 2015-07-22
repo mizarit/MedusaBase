@@ -4,7 +4,8 @@ class Base
 {
   public $values = array();
   protected $relations = array();
-  
+  protected $db = 'db';
+
   public function prefix()
   {
     return '';
@@ -85,7 +86,7 @@ class Base
 
   private function get_row($sql)
   {
-    $db = Registry::get('db');
+    $db = Registry::get($this->db);
 
     $rs = $db->query($sql);
     if (!$rs) {
@@ -97,7 +98,8 @@ class Base
 
   private function get_results($sql)
   {
-    $db = Registry::get('db');
+
+    $db = Registry::get($this->db);
     $return = array();
 
     $rs = $db->query($sql);
@@ -122,7 +124,7 @@ class Base
       $id = $this->id;
     }
 
-    $db = Registry::get('db');
+    $db = Registry::get($this->db);
 
     $sql = sprintf('DELETE FROM %s WHERE id = %s', $this->table(), $id);
     return $db->query($sql);
@@ -209,7 +211,7 @@ class Base
   
   public function save($forceNew = false, $send = false)
   {
-    $db = Registry::get('db');
+    $db = Registry::get($this->db);
 
     $values = $this->values;
     foreach ($values as $k => $v) {

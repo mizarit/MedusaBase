@@ -16,25 +16,30 @@ if ($count > 0) {
       <h3><i class="fa fa-arrow-left" id="nav-back" onclick="closeSubmenu();"></i>Menu<i class="fa fa-close" id="nav-close" onclick="closeSubmenu();toggleSidebar('sidebar-left');"></i></h3>
       <div id="mainnav" class="active">
         <ul style="margin-top:0.5em;">
-          <li style="background:#fec508;color:#fff;"><i class="fa fa-user"></i> <span id="user-name">Blondie dollie</span></li>
+          <?php
+          $current_user = User::model()->findByAttributes(new Criteria(array('xid' => Registry::get('user_id'))));
+          if ($current_user) { ?>
+            <li style="background:#fec508;color:#fff;"><i class="fa fa-user"></i> <span id="user-name"><?php echo $current_user->firstName; ?></span></li>
+          <?php } ?>
+
           <li onclick="setActive(this);goPage(2);toggleSidebar('sidebar-left');"><i class="fa fa-calendar"></i> Afspraken</li>
           <!--<li onclick="setActive(this);goPage(1);toggleSidebar('sidebar-left');"><i class="fa fa-users"></i> Klanten</li>-->
           <li onclick="setActive(this);Workorder.showWorkorders();goPage(16);toggleSidebar('sidebar-left');"><i class="fa fa-wrench"></i> Werkbonnen (<span id="workorder-count">0</span>)</li>
           <!--<li onclick="setActive(this);goPage(10);toggleSidebar('sidebar-left');"><i class="fa fa-comment"></i> Notities</li>-->
         </ul>
           <ul>
-            <?php if($user->device=='android' || $user->device=='ios'){ ?>
+            <?php if($user && ($user->device=='android' || $user->device=='ios')){ ?>
             <li class="subnav" onclick="openSubmenu();"><i class="fa fa-cogs"></i> Instellingen<span><i class="fa fa-chevron-right"></i></span></li>
             <?php } ?>
-            <li onclick="window.location.href='/main/logoff';toggleSidebar('sidebar-left');"><i class="fa fa-sign-out"></i> Uitloggen</li>
+            <li onclick="Workorder.logoff();toggleSidebar('sidebar-left');"><i class="fa fa-sign-out"></i> Uitloggen</li>
           </ul>
-          <?php if (strpos($_SERVER['SERVER_NAME'], 'mizar')) { ?>
+          <?php //if (strpos($_SERVER['SERVER_NAME'], 'mizar')) { ?>
             <ul>
               <li onclick="window.location.href=window.location.href;"><i class="fa fa-refresh"></i> Verversen</li>
               <li onclick="localStorage.clear();window.location.href='/main/index';"><i class="fa fa-refresh"></i> Cache legen</li>
               <li onclick="window.location.href='/main/debug?ju=<?php echo $user_id; ?>';"><i class="fa fa-bug"></i>Debugger</li>
             </ul>
-          <?php } ?>
+          <?php //} ?>
 
       </div>
     <div id="subnav">

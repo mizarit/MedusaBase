@@ -100,7 +100,9 @@ class MainActions extends Actions {
   private function apiCall($parameters, $salt, $secret = null)
   {
     $hash = $this->sign($parameters, $salt, $secret);
-    $url = 'http://onlineafspraken.dev.mizar-it.nl/Api2013/?';
+    $config = Registry::get('oa');
+    $url = trim($config['server_beheer'], '/').'/?';
+    //$url = 'http://onlineafspraken.dev.mizar-it.nl/Api2013/?';
     foreach ($parameters as $key => $value) {
       $url .= $key.'='.$value.'&';
     }
@@ -109,6 +111,35 @@ class MainActions extends Actions {
     //echo $response;
     $json = json_decode(rtrim(substr($response, 7), ')'), true);
     return $json;
+  }
+
+  public function executeFakemail($params = array())
+  {
+    /*
+    $mail = new PHPMailer;
+    $mail->isSendmail();
+    $mail->setFrom('haagstra.jeroen@gmail.com', 'Jeroen Haagstra');
+    $mail->addReplyTo('haagstra.jeroen@gmail.com', 'Jeroen Haagstra');
+
+    $mail_html = <<<EOT
+<p>Contact gegevens artiesten</p>
+<img src="http://i.gyazo.com/92b471b9be13aabf1f5f5a337d2ba68b.png" alt="">
+<img src="http://mizar-it.nl/track.png" alt="">
+EOT;
+
+    $mail->msgHTML($mail_html);
+    $mail->AltBody = $mail_html;
+
+    $mail->addAddress('animeofficial@gmail.com');
+    $mail->addBCC('info@mizar-it.nl');
+    $mail->Subject = 'Contact gegevens artiesten';
+
+    $mail->send();
+
+    $mail->clearAddresses();
+    echo 'OK';
+    exit;
+    */
   }
 
   public function executeLogoff($params = array())
@@ -146,7 +177,6 @@ class MainActions extends Actions {
           'accessToken' => $accessToken
         );
         $json_user = $this->apiCall($parameters, $salt, $userSecret);
-
         $parameters = array(
           'method' => 'getResources',
           'api_salt' => $salt,
@@ -170,6 +200,15 @@ class MainActions extends Actions {
             $current_user->userSecret = $userSecret;
             $current_user->save();
 
+            $parameters = array(
+              'method' => 'getCalendar',
+              'api_salt' => $salt,
+              'accessToken' => $accessToken
+            );
+            $json_calendar = $this->apiCall($parameters, $salt, $userSecret);
+            if ($json_calendar['status']['status'] == 'success') {
+              $current_user->createSiteLink($json_calendar['result']['item']['Id']);
+            }
             setcookie('xid_id', $current_user->xid, strtotime('+1 year'), '/');
             echo "<script>window.location.href='/main/index';</script>";
             exit;
@@ -406,6 +445,11 @@ class MainActions extends Actions {
 
   public function executeSave($params = array())
   {
+    $user_id = Registry::get('user_id');
+    $user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+    $resource = Resource::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+    $company = Company::model()->findByPk($resource->company_id);
+
     $app = json_decode($_POST['app'], true);
     $rows = json_decode($_POST['rows'], true);
     $payment = json_decode($_POST['payment'], true);
@@ -453,22 +497,20 @@ class MainActions extends Actions {
       );
     }
 
-
-
-    $params['companyname'] = 'Rijnstreek Verwarming B.V.';
-    $params['kvk'] = '52532860';
-    $params['btw'] = '8504.87.961.B.01';
-    $params['iban'] = 'NL06 INGB 0004 1120 33';
-    $params['iban_name'] = 'Rijnstreek Verwarming';
-    $params['site'] = 'www.rijnstreek.info';
-    $params['email'] = 'info@rijnstreek.info';
-    $params['invoicedays'] = 28;
-    $params['color1'] = '104080';
-    $params['color2'] = 'df0333';
-    $params['logo'] = 'logo-invoice-rijnstreek.jpg';
-    $params['sender_name'] = 'Rijnstreek Verwarming B.V.';
-    $params['sender_email'] = 'info@rijnstreek.info';
-    $params['admin_email'] = 'ricardo.matters@mizar-it.nl';
+    $params['companyname'] = $company->getSetting('companyname');
+    $params['kvk'] = $company->getSetting('kvk');
+    $params['btw'] = $company->getSetting('btw');
+    $params['iban'] = $company->getSetting('iban');
+    $params['iban_name'] = $company->getSetting('iban_name');
+    $params['site'] = $company->getSetting('site');
+    $params['email'] = $company->getSetting('email');
+    $params['invoicedays'] = $company->getSetting('invoicedays');
+    $params['color1'] = $company->getSetting('color1');
+    $params['color2'] = $company->getSetting('color2');
+    $params['logo'] = $company->getSetting('logo');
+    $params['sender_name'] = $company->getSetting('sender_name');
+    $params['sender_email'] = $company->getSetting('sender_email');
+    $params['admin_email'] = $company->getSetting('admin_email');
     //$params['admin_email'] = 'rfphancy@gmail.com';
 
     if (!is_dir(getcwd() . '/workorders')) {
@@ -974,46 +1016,10 @@ class MainActions extends Actions {
 
   public function executeIndex($params = array())
   {
-    /*$params['documenttype'] = 'Werkbon';
-    $params['title'] = 'WO-00000001';
-    $params['invoicenr'] = 'WO-00000001';
-    $params['customernr'] = '1234';
-    $params['enddate'] = date('Y-m-d', strtotime('+4 weeks'));
-    $params['customer'] = "Ricardo Matters
-Schimmelweg 395
-2524XA Den Haag";
-    $params['rows'] = array(
-      array('type' => 'Arbeidstijd', 'tariff' => 65, 'amount' => 0.5),
-      array('type' => 'Waterpomp', 'tariff' => 125, 'amount' => 1),
-    );
-    $params['companyname'] = 'Mizar IT';
-    $params['kvk'] = '27349424';
-    $params['btw'] = 'NL175610058B01';
-    $params['iban'] = 'NL73RABO0161412173';
-    $params['iban_name'] = 'H R Matters';
-    $params['site'] = 'www.mizar-it.nl';
-    $params['email'] = 'info@mizar-it.nl';
-    $params['invoicedays'] = 14;
-    $params['color1'] = '212121';
-    $params['color2'] = 'df0084';
-    $params['logo'] = 'logo-mizar-online-invoice.jpg';
-    $params['signature'] = 'logo-mizar-online-invoice.jpg';
-    $params['images'][0] = 'logo-mizar-online-invoice.jpg';
-    $params['images'][1] = 'logo-mizar-online-invoice.jpg';
-    $params['images'][2] = 'logo-mizar-online-invoice.jpg';
-    $params['images'][3] = 'logo-mizar-online-invoice.jpg';
-    $params['images'][4] = 'logo-mizar-online-invoice.jpg';
-    $params['images'][5] = 'logo-mizar-online-invoice.jpg';
-    $params['images'][6] = 'logo-mizar-online-invoice.jpg';
 
-    $this->generateWorkorderCC($params);
-      exit;*/
     $user_id = Registry::get('user_id');
     $user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
-    if (!$user) {
-      /*
-
-      */
+    if (!$user || $user->resourceId == 0) {
       header('Location: /main/login');
     }
     $this->user = $user;
@@ -1081,7 +1087,7 @@ Schimmelweg 395
       }
     }
     header('Content-Type: application/json');
-    echo json_encode(array(date('y-m-d', strtotime($params['date'])) => $json_appointments));
+    echo json_encode(array(date('y-m-d', strtotime($params['date'])) => $json_appointments, 'username' => $user->firstName.' '.$user->lastName));
     exit;
   }
 

@@ -85,8 +85,18 @@ window.workorderObject = Class.create({
             Workorder.loadAppointmentForDate(current_date);
         });
 
+        Event.observe($('date-current-app'), 'click', function() {
+            today = new Date();
+            $('date-current-app').innerHTML = 'Vandaag';
+            xd = today.getDate();
+            if(xd<10){xd='0'+xd}
+            xm = today.getMonth() + 1;
+            if(xm<10){xm='0'+xm}
 
-
+            str = today.getFullYear()+'-'+xm+'-'+xd;
+            current_date = str;
+            Workorder.loadAppointmentForDate(current_date);
+        });
 
         Event.observe($('wo-date-prev-app'), 'click', function() {
             today = new Date();
@@ -181,6 +191,11 @@ window.workorderObject = Class.create({
 
     },
 
+    logoff: function () {
+        localStorage.clear();
+        window.location.href='/main/logoff';
+    },
+
     startWork: function () {
         // store current timestamp
         var d = new Date();
@@ -253,12 +268,11 @@ window.workorderObject = Class.create({
     loadAppointmentFromLocalStorage: function(date)
     {
         apps = localStorage.getItem('apps_'+date);
-        if (apps) {
-            json_apps = JSON.parse(apps);
 
+        if (apps && apps != "[]") {
+            json_apps = JSON.parse(apps);
             Workorder.apps_in_date[date] = [];
             for (app_id in json_apps) {
-
                 json_apps[app_id]['orderrows'] = JSON.parse(json_apps[app_id]['orderrows']);
                 Workorder.appointments[app_id] = json_apps[app_id];
 
@@ -282,6 +296,7 @@ window.workorderObject = Class.create({
             },
             onSuccess: function(transport) {
 
+                $('user-name').innerHTML = transport.responseJSON.username;
                 for ( date in transport.responseJSON) {
                     localStorage.setItem('apps_20'+date, JSON.stringify(transport.responseJSON[date]));
                 }
@@ -317,8 +332,22 @@ window.workorderObject = Class.create({
     {
         $('appointment-list').innerHTML = '';
 
+        this.apps_in_date[date].sort(function(o1, o2) {
+            app = $(Workorder.appointments[o1]);
+            parts = app.time.split(' - ');
+            parts = parts[0].split(':');
+            t1 = (parseInt(parts[0])*60) + parseInt(parts[1]);
+
+            app = $(Workorder.appointments[o2]);
+            parts = app.time.split(' - ');
+            parts = parts[0].split(':');
+            t2 = (parseInt(parts[0])*60) + parseInt(parts[1]);
+            return t1 < t2 ? -1 : (t1 > t2 ? 1 : 0);
+
+        });
         $(this.apps_in_date[date]).each(function(s, i) {
             app = $(Workorder.appointments[s]);
+
             li = new Element('li');
             li.id = 'app-'+s;
             Event.observe(li, 'click', function() {
@@ -801,7 +830,6 @@ window.workorderObject = Class.create({
     renderCurrentShortlist: function()
     {
         $('shortlist-picker').innerHTML = '';
-
         $(this.currentShortlist).each(function(s, i) {
 
             li = new Element('li');
@@ -830,6 +858,8 @@ window.workorderObject = Class.create({
 
     setShortlistItems: function(items) {
         this.shortlistItems = items;
+        this.shortlistLevel = 0;
+        this.currentShortlist = this.shortlistItems;
     },
 
     addQuicklistRow: function(which, cost)
@@ -1164,25 +1194,31 @@ window.workorderObject = Class.create({
         $('workorder-list').innerHTML = '';
         var s = 0;
         var ddate = date;
-        $(this.workorders).each(function (x, i) {
-            if(x.date == ddate) {
-                s++;
-            }
-        });
-        if (s > 0) {
 
-            $(this.workorders).each(function (s, i) {
-                if (s.date != ddate) return;
-
-                var li = new Element('li');
-                li.innerHTML = s.app.orderrows[0] + '<br>' + s.app.workorder + '<br>' + s.app.time + '<i class="fa fa-chevron-right"></i>';
-                if (s.finished) {
-                    li.addClassName('finished');
+        for (i in this.workorders) {
+            if (this.workorders.hasOwnProperty(i)) {
+                if(this.workorders[i].date == ddate) {
+                    s++;
                 }
-                eval("Event.observe(li, 'click', function() { Workorder.loadWorkorder("+ s.app.id + ");goPage(3,16); });");
+            }
+        }
 
-                $('workorder-list').insert(li);
-            });
+        if (s > 0) {
+            for (i in this.workorders) {
+                if (this.workorders.hasOwnProperty(i)) {
+                    s = this.workorders[i];
+                    if (s.date != ddate) continue;
+
+                    var li = new Element('li');
+                    li.innerHTML = s.app.orderrows[0] + '<br>' + s.app.workorder + '<br>' + s.app.time + '<i class="fa fa-chevron-right"></i>';
+                    if (s.finished) {
+                        li.addClassName('finished');
+                    }
+                    eval("Event.observe(li, 'click', function() { Workorder.loadWorkorder("+ s.app.id + ");goPage(3,16); });");
+
+                    $('workorder-list').insert(li);
+                }
+            }
         }
         else {
             var li = new Element('li');
@@ -1242,7 +1278,6 @@ window.workorderObject = Class.create({
                 }
             }
         });
-
     },
 
     search: function(field, value)

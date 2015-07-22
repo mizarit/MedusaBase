@@ -1,17 +1,53 @@
 <?php
 
-$config = array(
-  'connection' => array(
-    'server' => 'localhost',
-    'database' => 'medusa',
-    'username' => 'medusa',
-    'password' => 'medusa'
-  ),
-  'oa' => array(
-    'server' => 'http://onlineafspraken.dev.mizar-it.nl/APIREST',
-    'api_key' => 'fhlg83culd13-bzld03',
-    'api_secret' => '22571c6007f22bbb9d3d9dbaf5a4b7e2a976fea3'
-  ),
+$debug_prod = true;
+
+if (!$debug_prod && strstr($_SERVER['SERVER_NAME'], 'mizar')) {
+  $config = array(
+    'connection' => array(
+      'server' => 'localhost',
+      'database' => 'medusa',
+      'username' => 'medusa',
+      'password' => 'medusa'
+    ),
+    'connection_site' => array(
+      'server' => 'localhost',
+      'database' => 'iwerkbon-site',
+      'username' => 'zeus4',
+      'password' => 'zeus4'
+    ),
+    'oa' => array(
+      'server' => 'http://onlineafspraken.dev.mizar-it.nl/APIREST',
+      'server_beheer' => 'http://onlineafspraken.dev.mizar-it.nl/Api2013',
+      'api_key' => 'fhlg83culd13-bzld03',
+      'api_secret' => '22571c6007f22bbb9d3d9dbaf5a4b7e2a976fea3'
+    )
+  );
+}
+else {
+  $config = array(
+    'connection' => array(
+      'server' => 'localhost',
+      'database' => 'iwerkbon',
+      'username' => 'iwerkbon',
+      'password' => 'iwerkbon'
+    ),
+    'connection_site' => array(
+      'server' => 'localhost',
+      'database' => 'iwerkbon-site',
+      'username' => 'zeus4',
+      'password' => 'zeus4'
+    ),
+    'oa' => array( // Rijnstreek
+      'server' => 'https://agenda.onlineafspraken.nl/APIREST',
+      'server_beheer' => 'https://agenda.onlineafspraken.nl/Api2013',
+      'api_key' => 'nccf92lrey49-lbaz00',
+      'api_secret' => '2e2522aece449b576c3a0a03a9b4692ff0e674d4'
+    ),
+  );
+}
+
+$config = array_merge($config, array(
   'products' => array(
     array(
       'title' => 'Diensten',
@@ -455,6 +491,6 @@ $config = array(
     )
 
   )
-);
+));
 
 ?>
