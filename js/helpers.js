@@ -126,6 +126,29 @@ function goPage(page_id) {
             Android.setPhysicalBackCallback("");
         }
     }
+
+    page_titles = {
+        1: 'Klanten',
+        2: 'Afspraken',
+        3: 'Werkbon',
+        4: 'page 4',
+        5: 'Digitale handtekening',
+        6: 'Reistijden',
+        7: 'Urenregistratie',
+        8: 'Situatiefoto\'s',
+        9: 'Afrekenen',
+        10: 'Notities',
+        11: 'page 11',
+        12: 'Orderregels',
+        13: 'Werkzaamheden toevoegen',
+        14: 'Uren toevoegen',
+        15: 'Product toevoegen',
+        16: 'Werkbonnen',
+        17: 'Snelkeuze',
+        18: 'Controleren',
+        19: 'page 19'
+    };
+    $('page-title').innerHTML = page_titles[page_id];
     /*
      if (prev_id > 0) {
      $('back-button').show();

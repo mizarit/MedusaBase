@@ -273,23 +273,27 @@ window.workorderObject = Class.create({
             json_apps = JSON.parse(apps);
             Workorder.apps_in_date[date] = [];
             for (app_id in json_apps) {
-                json_apps[app_id]['orderrows'] = JSON.parse(json_apps[app_id]['orderrows']);
-                Workorder.appointments[app_id] = json_apps[app_id];
+                if(json_apps[app_id]['orderrows']) {
+                    json_apps[app_id]['orderrows'] = JSON.parse(json_apps[app_id]['orderrows']);
 
-                if (!Workorder.apps_in_date[date]) {
-                    Workorder.apps_in_date[date] = [];
+                    Workorder.appointments[app_id] = json_apps[app_id];
+
+                    if (!Workorder.apps_in_date[date]) {
+                        Workorder.apps_in_date[date] = [];
+                    }
+                    $(Workorder.apps_in_date[date]).push(app_id);
                 }
-                $(Workorder.apps_in_date[date]).push(app_id);
             }
-
-            Workorder.renderAppointmentsForDate(date);
         }
+
+        Workorder.renderAppointmentsForDate(date);
+
 
     },
 
     loadAppointmentsFromBackend: function(date)
     {
-        this.cdate = date;
+        Workorder.cdate = date;
         new Ajax.Request('/main/loadAppointments', {
             parameters: {
                 date: date
@@ -303,7 +307,7 @@ window.workorderObject = Class.create({
                 Workorder.loadAppointmentFromLocalStorage(Workorder.cdate);
                 setTimeout(function() {
                     Workorder.loadAppointmentsFromBackend(Workorder.cdate);
-                },300000); // 5 minutes
+                }, 60000); // 1 minute
 
             },
             onFailure: function()
@@ -314,7 +318,7 @@ window.workorderObject = Class.create({
 
     loadAppointmentForDate: function(date)
     {
-        this.cdate = date;
+        Workorder.cdate = date;
         this.loadAppointmentFromLocalStorage(date);
         this.loadAppointmentsFromBackend(date);
 
@@ -332,6 +336,7 @@ window.workorderObject = Class.create({
     {
         $('appointment-list').innerHTML = '';
 
+        if (!this.apps_in_date[date]) return;
         this.apps_in_date[date].sort(function(o1, o2) {
             app = $(Workorder.appointments[o1]);
             parts = app.time.split(' - ');
@@ -388,7 +393,6 @@ window.workorderObject = Class.create({
     loadAppointment: function (appointment_id) {
         if(this.appointments[appointment_id]) {
             app = this.appointments[appointment_id];
-
             date = new Date();
             m = date.getMonth()+1;
             if (m < 10) m = '0'+m;
@@ -406,16 +410,16 @@ window.workorderObject = Class.create({
                     remarks: '',
                     rows: [
                         /*{
-                            type: 'activity',
-                            cost: '9,95',
-                            desc: 'Test activity'
-                        },
-                        {
-                            type: 'product',
-                            cost: '24,95',
-                            vat: 21,
-                            desc: 'Test product'
-                        }*/
+                         type: 'activity',
+                         cost: '9,95',
+                         desc: 'Test activity'
+                         },
+                         {
+                         type: 'product',
+                         cost: '24,95',
+                         vat: 21,
+                         desc: 'Test product'
+                         }*/
                     ],
                     photos: [],
                     signature: null,
@@ -425,6 +429,11 @@ window.workorderObject = Class.create({
                     date: wo_date
                 };
 
+                this.setWorkorder(wo, appointment_id);
+            }
+            if (app.checklist) {
+                wo = this.workorders[appointment_id];
+                wo.checklist = app.checklist;
                 this.setWorkorder(wo, appointment_id);
             }
             this.loadWorkorder(appointment_id);
@@ -756,7 +765,7 @@ window.workorderObject = Class.create({
 
                 Event.observe(li, 'click', function() {
                     $$('#orderrows li button').each(function(s, i) {
-                       $(s).hide(); // hide all buttons, also of other rows
+                        $(s).hide(); // hide all buttons, also of other rows
                     });
                     $$('#orderrows #row-cnt-'+this.id.substr(8)+' button').each(function(s, i) {
                         $(s).show(); // show all buttons, only for this row
@@ -795,6 +804,28 @@ window.workorderObject = Class.create({
     {
         wo = this.getTmpWorkorder();
         $('remarks').innerHTML = wo.remarks;
+        $('checklist-container').innerHTML = wo.remarks;
+        if (wo.checklist) {
+            for ( i in wo.checklist) {
+                for ( o in wo.checklist[i]) {
+                    // <input id="mark-as-ready" type="checkbox" checked="checked" onchange="Workorder.setReady(this.checked);">
+                    // <label class="checkbox" for="mark-as-ready" style="margin-bottom:0.4em;"> Werkzaamheden zijn gereed</label>
+                    var input = new Element('input');
+                    input.setAttribute('id',  'checklist-'+i+'-'+o);
+                    input.setAttribute('type', 'checkbox');
+
+                    var label = new Element('label');
+                    label.addClassName('checkbox');
+                    label.setAttribute('for', 'checklist-'+i+'-'+o);
+                    label.setAttribute('style', 'margin-bottom:0.4em');
+                    label.innerHTML = ' '+wo.checklist[i][o];
+
+                    $('checklist-container').insert(input);
+                    $('checklist-container').insert(label);
+                    $('checklist-container').insert('<br />');
+                }
+            }
+        }
         goPage(18, 3);
     },
 
@@ -915,7 +946,7 @@ window.workorderObject = Class.create({
     saveActivityRow: function(add)
     {
         desc = $('activityrowdesc').value;
-        cost = $('activityrowcost').value;
+        cost = $('activityrowcost').value.replace(',', '.');
         if(desc.length < 2 || desc == 'Omschrijving') {
             toast('Omschrijving is te kort.');
         }
@@ -978,7 +1009,7 @@ window.workorderObject = Class.create({
     saveHoursRow: function(add)
     {
         desc = $('hoursrowdesc').value;
-        minutes = $('hoursrowminutes').value;
+        minutes = $('hoursrowminutes').value.replace(',', '.');
         if(desc.length < 2 || desc == 'Omschrijving') {
             toast('Omschrijving is te kort.');
         }
@@ -1048,7 +1079,7 @@ window.workorderObject = Class.create({
     saveProductRow: function(add)
     {
         desc = $('productrowdesc').value;
-        cost = $('productrowcost').value;
+        cost = $('productrowcost').value.replace(',', '.');
         vat = $('productrowvat').value;
         amount = $('productrowamount').value;
         if(desc.length < 2 || desc == 'Omschrijving') {
@@ -1127,6 +1158,14 @@ window.workorderObject = Class.create({
         goPage(9, 5);
     },
 
+    numberInputs: function(enable)
+    {
+        var numbertype = enable ? 'number' : 'input';
+        $$('.number-input').each(function(s,i) {
+            $(s).type = numbertype;
+        });
+    },
+
     addPhoto: function(image) {
         wo = this.getTmpWorkorder();
         wo.photos.push(image);
@@ -1153,10 +1192,10 @@ window.workorderObject = Class.create({
                 $('photo-delete').show();
             });
 
-                Event.observe(li, 'blur', function() {
-                    $(this).setAttribute('style', 'border: none;');
-                    $('photo-delete').hide();
-                });
+            Event.observe(li, 'blur', function() {
+                $(this).setAttribute('style', 'border: none;');
+                $('photo-delete').hide();
+            });
             $('images').insert(li);
         });
         if (wo.photos.length > 0 ) {

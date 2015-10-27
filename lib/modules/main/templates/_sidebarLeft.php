@@ -12,41 +12,49 @@ if ($count > 0) {
 <div id="sidebar-left" class="sidebar">
 
 
-    <div id="sidebar-left-inner" class="sidebar-inner" style="overflow:scroll;width:100%;">
-      <h3><i class="fa fa-arrow-left" id="nav-back" onclick="closeSubmenu();"></i>Menu<i class="fa fa-close" id="nav-close" onclick="closeSubmenu();toggleSidebar('sidebar-left');"></i></h3>
-      <div id="mainnav" class="active">
-        <ul style="margin-top:0.5em;">
-          <?php
-          $current_user = User::model()->findByAttributes(new Criteria(array('xid' => Registry::get('user_id'))));
-          if ($current_user) { ?>
-            <li style="background:#fec508;color:#fff;"><i class="fa fa-user"></i> <span id="user-name"><?php echo $current_user->firstName; ?></span></li>
-          <?php } ?>
+  <div id="sidebar-left-inner" class="sidebar-inner" style="overflow:scroll;width:100%;">
+    <h3><i class="fa fa-arrow-left" id="nav-back" onclick="closeSubmenu();"></i><img src="/img/logo-wide.png"><i class="fa fa-close" id="nav-close" onclick="closeSubmenu();toggleSidebar('sidebar-left');"></i></h3>
+    <div id="mainnav" class="active">
+      <ul style="margin-top:0.5em;">
+        <?php
+        $current_user = Resource::model()->findByAttributes(new Criteria(array('xid' => Registry::get('user_id'))));
+        if ($current_user) { ?>
+          <li style="background:#0089f9;color:#fff;"><i class="fa fa-user"></i> <span id="user-name"><?php echo $current_user->name; ?></span></li>
+        <?php } ?>
 
-          <li onclick="setActive(this);goPage(2);toggleSidebar('sidebar-left');"><i class="fa fa-calendar"></i> Afspraken</li>
-          <!--<li onclick="setActive(this);goPage(1);toggleSidebar('sidebar-left');"><i class="fa fa-users"></i> Klanten</li>-->
-          <li onclick="setActive(this);Workorder.showWorkorders();goPage(16);toggleSidebar('sidebar-left');"><i class="fa fa-wrench"></i> Werkbonnen (<span id="workorder-count">0</span>)</li>
-          <!--<li onclick="setActive(this);goPage(10);toggleSidebar('sidebar-left');"><i class="fa fa-comment"></i> Notities</li>-->
-        </ul>
-          <ul>
-            <?php if($user && ($user->device=='android' || $user->device=='ios')){ ?>
-            <li class="subnav" onclick="openSubmenu();"><i class="fa fa-cogs"></i> Instellingen<span><i class="fa fa-chevron-right"></i></span></li>
-            <?php } ?>
-            <li onclick="Workorder.logoff();toggleSidebar('sidebar-left');"><i class="fa fa-sign-out"></i> Uitloggen</li>
-          </ul>
-          <?php //if (strpos($_SERVER['SERVER_NAME'], 'mizar')) { ?>
-            <ul>
-              <li onclick="window.location.href=window.location.href;"><i class="fa fa-refresh"></i> Verversen</li>
-              <li onclick="localStorage.clear();window.location.href='/main/index';"><i class="fa fa-refresh"></i> Cache legen</li>
-              <li onclick="window.location.href='/main/debug?ju=<?php echo $user_id; ?>';"><i class="fa fa-bug"></i>Debugger</li>
-            </ul>
-          <?php //} ?>
+        <li onclick="setActive(this);goPage(2);toggleSidebar('sidebar-left');"><i class="fa fa-calendar"></i> Afspraken</li>
+        <!--<li onclick="setActive(this);goPage(1);toggleSidebar('sidebar-left');"><i class="fa fa-users"></i> Klanten</li>-->
+        <li onclick="setActive(this);Workorder.showWorkorders();goPage(16);toggleSidebar('sidebar-left');"><i class="fa fa-wrench"></i> Werkbonnen (<span id="workorder-count">0</span>)</li>
+        <!--<li onclick="setActive(this);goPage(10);toggleSidebar('sidebar-left');"><i class="fa fa-comment"></i> Notities</li>-->
+      </ul>
+      <ul>
+        <?php if($user && ($user->device=='android' || $user->device=='ios')){ ?>
+          <li class="subnav" onclick="openSubmenu();"><i class="fa fa-cogs"></i> Instellingen<span><i class="fa fa-chevron-right"></i></span></li>
+        <?php } ?>
+        <li onclick="Workorder.logoff();toggleSidebar('sidebar-left');"><i class="fa fa-sign-out"></i> Uitloggen</li>
+      </ul>
+      <?php if (strpos($_SERVER['SERVER_NAME'], 'mizar')) { ?>
+      <ul>
+        <li onclick="window.location.href=window.location.href;"><i class="fa fa-refresh"></i> Verversen</li>
+        <li onclick="localStorage.clear();window.location.href='/main/index';"><i class="fa fa-refresh"></i> Cache legen</li>
+        <li onclick="window.location.href='/main/debug?ju=<?php echo $user_id; ?>';"><i class="fa fa-bug"></i>Debugger</li>
+      </ul>
+      <?php } ?>
 
-      </div>
+    </div>
     <div id="subnav">
       <h4>Instellingen</h4>
 
-      <h5>Notificaties</h5>
       <?php if(isset($_SESSION['isAndroid']) && $_SESSION['isAndroid']){ ?>
+        <h5>Toetsenbord</h5>
+        <p style="display:block;font-size:1.2em;margin:0;padding: 0.1em 0.6em 0.3em 0.6em;">Schakel Slim Toetsenbord uit als je problemen ervaart bij het invoeren van getallen.</p>
+        <ul>
+          <li>
+            <label for="smartkeyboard">Slim toetsenbord</label>
+            <input id="smartkeyboard" type="checkbox" checked="checked" onchange="Android.setSetting('smartkeyboard', this.checked ? '1' : '0');Workorder.numberInputs(this.checked);"><span onclick="$('smartkeyboard').click();" class="checkbox"></span>
+          </li>
+        </ul>
+        <h5>Notificaties</h5>
         <ul>
           <li>
             <label for="notifications">Notificaties ontvangen</label>
@@ -63,6 +71,7 @@ if ($count > 0) {
         </ul>
       <?php } ?>
       <?php  if(isset($_SESSION['isIos']) && $_SESSION['isIos']){ ?>
+        <h5>Notificaties</h5>
         <ul>
           <li>
             <label for="notifications">Notificaties ontvangen</label>

@@ -1,7 +1,5 @@
 <div id="page-2" style="padding: 0;margin:0;" class="active">
-  <h2 style="margin:0;padding:0;border-top:#fff 1px solid;background:#2ea6dd;font-size:1.5em;line-height:1.6em;color:#fff;">Afspraken</h2>
   <div style="padding: 0.5em;">
-
     <div class="date-selector">
       <div id="date-prev-app" class="date-prev"><i class="fa fa-caret-left"></i></div>
       <div id="date-current-app" class="date-current">Vandaag</div>

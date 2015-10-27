@@ -2,7 +2,8 @@
 
 class User extends Base {
   public $model = 'user';
-  
+  protected $db = 'db_site';
+
   public $relations = array(
     'user' => array('user', 'id'),
   );
@@ -11,7 +12,7 @@ class User extends Base {
   {
     return new User;
   }
-
+/*
   public function getApiKey()
   {
     $connection = $this->getApiConnection();
@@ -57,4 +58,5 @@ class User extends Base {
     }
     return $connection;
   }
+*/
 }

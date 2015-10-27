@@ -1,5 +1,4 @@
 <div id="page-8" style="padding: 0;margin:0;">
-  <h2 style="margin:0;padding:0;border-top:#fff 1px solid;background:#2ea6dd;font-size:1.5em;line-height:1.6em;color:#fff;">Situatiefoto's</h2>
   <div style="padding: 0.5em;">
     <p id="no-photos">Er zijn nog geen foto's toegevoegd.</p>
     <ul id="images"></ul>
@@ -11,7 +10,7 @@
   </div>
   <div style="clear:both;"></div>
   <ul class="subnav">
-    <li class="save" onclick="Workorder.savePhotoForm();">Opslaan</li>
+    <li class="button-2" onclick="Workorder.savePhotoForm();">Opslaan</li>
     <?php if(isset($_SESSION['isIos']) && $_SESSION['isIos']){ ?>
       <li onclick="iOS.attachFileInput();">Foto toevoegen</li>
     <?php }
@@ -20,7 +19,5 @@
     <?php } ?>
       <li id="photo-delete" style="background:#e93653;">Foto verwijderen</li>
   </ul>
-
-  </div>
 </div>
 

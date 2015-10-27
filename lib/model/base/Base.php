@@ -182,7 +182,6 @@ class Base
   {
     $where = $criteria?$criteria->sql():'';
     $sql = sprintf('SELECT * FROM %s %s', $this->table(), $where);
-    //echo $sql;
     $records = $this->get_results($sql);
     $return = array();
     $class = $this->classMap($this->model);

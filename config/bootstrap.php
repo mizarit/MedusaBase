@@ -24,11 +24,9 @@ else if (isset($_GET['ju'])) {
   $user_id = $_COOKIE['xid_id'];
 }
 
-$current_user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+$current_user = Resource::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
 if (!$current_user) {
-  $current_user = new User;
-  $current_user->firstName = 'Temp';
-  $current_user->lastName = 'user';
+  $current_user = new Resource;
   $current_user->xid = $user_id;
   $current_user->save();
   setcookie('xid_id', $current_user->xid, strtotime('+1 year'), '/');
@@ -37,7 +35,7 @@ if (!$current_user) {
 if (!session_id()) session_start();
 
 Registry::set('user_id',$user_id);
-
+/*
 $oa = new OAAPI();
 Registry::set('oa_api', $oa);
 $agendas = $oa->sendRequest('getAgendas');
@@ -45,7 +43,7 @@ if (isset($agendas['Agenda'])) {
   $agenda = array_shift($agendas['Agenda']);
   Registry::set('oa_agenda', $agenda);
 }
-
+*/
 $device_info = $_GET;
 if (!isset($_GET['device']) && isset($_SESSION['device_info'])) {
   $device_info = json_decode($_SESSION['device_info'], true);

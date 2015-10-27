@@ -27,7 +27,7 @@
 </head>
 <body id="body"<?php if(isset($_SESSION['isIos']) && $_SESSION['isIos']) echo ' class="ios"'; ?>>
 <div id="connection-down"><div>Er is geen internet verbinding.</div></div>
-<div id="prompt"><div>Weet je het zeker?</div></div>
+<!--<div id="prompt"><div>Weet je het zeker?</div></div>-->
 <?php echo $content; ?>
 </body>
 </html>
