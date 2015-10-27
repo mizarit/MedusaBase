@@ -52,10 +52,6 @@ if (isset($device_info['device'])) {
   if ($current_user) {
     switch($device_info['device']) {
       case 'android':
-          $current_user->sensor = ( isset($device_info['sensor']) && $device_info['sensor'] == 1);
-          $current_user->device = 'android';
-          $current_user->save();
-
           if ($device_info['android_id'] != '') {
             $notifier = Notifier::model()->findByAttributes(new Criteria(array('user_id' => $current_user->id, 'pushDevice' => 'android', 'pushId' => $device_info['android_id'])));
             if (!$notifier) {
@@ -65,15 +61,15 @@ if (isset($device_info['device'])) {
               $notifier->pushId = $device_info['android_id'];
               $notifier->save();
             }
+
+            $current_user->device = 'android';
+            $current_user->notifier = $device_info['android_id'];
+            $current_user->save();
           }
         $_SESSION['isAndroid'] = true;
         break;
         
         case 'ios':
-          $current_user->sensor = ( isset($device_info['sensor']) && $device_info['sensor'] == 1);
-          $current_user->device = 'ios';
-          $current_user->save();
-
           if ($device_info['ios_id'] != '') {
             $notifier = Notifier::model()->findByAttributes(new Criteria(array('user_id' => $current_user->id, 'pushDevice' => 'ios', 'pushId' => $device_info['ios_id'])));
             if (!$notifier) {
@@ -83,6 +79,10 @@ if (isset($device_info['device'])) {
               $notifier->pushId = $device_info['ios_id'];
               $notifier->save();
             }
+
+            $current_user->device = 'ios';
+            $current_user->notifier = $device_info['ios_id'];
+            $current_user->save();
           }
 
         $_SESSION['isIos'] = true;

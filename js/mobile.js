@@ -31,9 +31,11 @@ window.workorderObject = Class.create({
             }
         });
 
-        Event.observe($('new-workorder'), 'click', function() {
-            Workorder.createWorkorder();
-        });
+        if(settings.add_workorder) {
+            Event.observe($('new-workorder'), 'click', function () {
+                Workorder.createWorkorder();
+            });
+        }
 
         Event.observe($('date-prev-app'), 'click', function() {
             today = new Date();
@@ -200,11 +202,6 @@ window.workorderObject = Class.create({
         // store current timestamp
         var d = new Date();
 
-        $('sn-2').addClassName('inactive');
-        $('sn-2').addClassName('readable');
-        $('sn-2').innerHTML = 'Gestart om '+ d.getHours() + ':'+ ('0'+d.getMinutes()).slice(-2)+ '<span class="fa fa-check"></span>';
-        $('sn-7').removeClassName('inactive');
-
         wo = this.loadWorkorder(this.current_workorder);
         wo.startWork = d.getHours() + ':'+ ('0'+d.getMinutes()).slice(-2);
 
@@ -213,18 +210,17 @@ window.workorderObject = Class.create({
 
         wo = this.loadWorkorder(this.current_workorder);
 
+        window.scroll(0,0);
         Effect.BlindUp('workorder-details', { duration: 0.3 });
 
         $('workorder-collapse-btn').addClassName('fa-caret-down');
         $('workorder-collapse-btn').removeClassName('fa-caret-up');
+
+        this.renderButtons();
     },
 
     finishWork: function () {
         var d = new Date();
-
-        $('sn-7').addClassName('inactive');
-        $('sn-7').addClassName('readable');
-        $('sn-7').innerHTML = 'Afgerond om '+ d.getHours() + ':'+ ('0'+d.getMinutes()).slice(-2)+'<span class="fa fa-check"></span>';
 
         wo = this.loadWorkorder(this.current_workorder);
         wo.finishWork = d.getHours() + ':'+ ('0'+d.getMinutes()).slice(-2);
@@ -235,20 +231,24 @@ window.workorderObject = Class.create({
         timeval2 = wo.finishWork.split(':');
         tv2 = (parseInt(timeval2[0])*60) + parseInt(timeval2[1]);
 
-        diff = tv2 - tv1;
+        if(settings.calc_times) {
+            diff = tv2 - tv1;
 
-        row = {
-            type: 'hours',
-            minutes: diff,
-            desc: 'Arbeidstijd'
-        };
+            row = {
+                type: 'hours',
+                minutes: diff,
+                desc: 'Arbeidstijd'
+            };
 
-        wo.rows.push(row);
+            wo.rows.push(row);
+        }
 
         this.setTmpWorkorder(wo);
         this.saveWorkorder();
 
         wo = this.loadWorkorder(this.current_workorder);
+
+        this.renderButtons();
     },
 
     startTravel: function ()
@@ -399,36 +399,26 @@ window.workorderObject = Class.create({
             d = date.getDate();
             if (d < 10) d = '0'+d;
             wo_date = date.getFullYear()+'-'+m+'-'+d;
-
             if(!this.workorders[appointment_id]) {
                 wo = {
+                    appointment_id: appointment_id,
                     app: app,
                     startWork: null,
                     finishWork: null,
                     startTravel: null,
                     finishTravel: null,
                     remarks: '',
-                    rows: [
-                        /*{
-                         type: 'activity',
-                         cost: '9,95',
-                         desc: 'Test activity'
-                         },
-                         {
-                         type: 'product',
-                         cost: '24,95',
-                         vat: 21,
-                         desc: 'Test product'
-                         }*/
-                    ],
+                    rows: JSON.parse(app.rows),
                     photos: [],
                     signature: null,
                     payment: {},
+                    checklist: {},
                     ready: false,
                     finished: false,
-                    date: wo_date
+                    checked: false,
+                    date: wo_date,
+                    extra: app.extra
                 };
-
                 this.setWorkorder(wo, appointment_id);
             }
             if (app.checklist) {
@@ -490,46 +480,104 @@ window.workorderObject = Class.create({
                 $('email').value = app['email'];
                 $('email').removeClassName('empty');
             }
+            if(this.tmp_workorder.extra) {
+                for(i in this.tmp_workorder.extra) {
+                    $(i).value = this.tmp_workorder.extra[i];
+                }
+            }
 
+            this.renderButtons();
+
+            return this.tmp_workorder;
+        }
+        return null;
+    },
+
+    renderButtons: function()
+    {
+        wo = this.getTmpWorkorder();
+        /*
+         2 time
+         7 end time
+         3 orderrows
+         4 phpto
+         8 check
+         6 signature
+         5 pos
+
+         */
+        if(settings.feature_times) {
+            // start and end time buttons are shown
+            $('sn-8').addClassName('inactive');
             if (this.tmp_workorder.startWork) {
                 $('sn-2').addClassName('inactive');
                 $('sn-2').addClassName('readable');
                 $('sn-2').innerHTML = 'Gestart om '+ this.tmp_workorder.startWork+'<span class="fa fa-check"></span>';
+                $('sn-7').removeClassName('inactive');
                 if (this.tmp_workorder.finishWork) {
-                    $('sn-7').innerHTML = 'Afgerond om '+ this.tmp_workorder.finishWork+'<span class="fa fa-check"></span>';
+                    $('sn-7').innerHTML = 'Afgerond om ' + this.tmp_workorder.finishWork + '<span class="fa fa-check"></span>';
                     $('sn-7').addClassName('inactive');
                     $('sn-7').addClassName('readable');
-                    if (this.tmp_workorder.finished) {
-                        $('sn-3').addClassName('inactive');
-                        $('sn-8').addClassName('inactive');
-                        $('sn-6').addClassName('inactive');
-                        $('sn-4').removeClassName('inactive');
-                    }
-                    else {
-                        $('sn-3').removeClassName('inactive');
-                        $('sn-4').removeClassName('inactive');
-                        $('sn-8').removeClassName('inactive');
-                    }
+                    $('sn-8').removeClassName('inactive'); // check/finish button
                 }
                 else {
-                    $('sn-7').addClassName('active');
                     $('sn-7').removeClassName('inactive');
+                    $('sn-7').innerHTML = 'Werkzaamheden afronden';
                 }
             }
             else {
                 $('sn-2').removeClassName('inactive');
                 $('sn-2').innerHTML = 'Werkzaamheden starten';
-                $('sn-3').addClassName('inactive');
-                $('sn-4').addClassName('inactive');
-                $('sn-5').addClassName('inactive');
-                $('sn-6').addClassName('inactive');
-                $('sn-7').addClassName('inactive');
-                $('sn-8').addClassName('inactive');
-            }
 
-            return this.tmp_workorder;
+                $('sn-7').addClassName('inactive');
+                $('sn-2').removeClassName('readable');
+                $('sn-7').innerHTML = 'Werkzaamheden afronden';
+            }
         }
-        return null;
+        else {
+            $('sn-8').removeClassName('inactive');
+        }
+        if(settings.crud_orderrows) {
+            $('sn-3').addClassName('inactive');
+            if(settings.feature_times) {
+                if (this.tmp_workorder.finishWork) {
+                    $('sn-3').removeClassName('inactive');
+                }
+            }
+            else {
+                $('sn-3').removeClassName('inactive');
+            }
+        }
+        if(settings.crud_photo) {
+            $('sn-4').addClassName('inactive');
+            if(settings.feature_times) {
+                if (this.tmp_workorder.finishWork) {
+                    $('sn-4').removeClassName('inactive');
+                }
+            }
+            else {
+                $('sn-4').removeClassName('inactive');
+            }
+        }
+
+        if(settings.feature_signature) {
+            $('sn-6').addClassName('inactive');
+            if(wo.checked) {
+                $('sn-6').removeClassName('inactive');
+            }
+        }
+
+        if(settings.feature_pos) {
+            $('sn-5').addClassName('inactive');
+            if(settings.feature_signature) {
+                if (wo.signature) {
+                    $('sn-5').removeClassName('inactive');
+                }
+            }
+            else if(wo.checked) {
+                $('sn-5').removeClassName('inactive');
+            }
+        }
     },
 
     setReady: function(ready)
@@ -542,15 +590,33 @@ window.workorderObject = Class.create({
 
     finalizeWorkorder: function()
     {
-        $('sn-6').removeClassName('inactive');
-        $('sn-8').addClassName('readable');
-
         wo = this.getTmpWorkorder();
         wo.remarks = $('remarks').value;
+        wo.checked = true;
+
+        if (settings.feature_checklist && wo.checklist) {
+            if (!wo.checklist_value) {
+                wo.checklist_value = {};
+            }
+            for (i in wo.checklist) {
+                for (o in wo.checklist[i]) {
+                    wo.checklist_value['checklist-'+i+'-'+o] = $('checklist-'+i+'-'+o).checked;
+                }
+            }
+        }
         this.setTmpWorkorder(wo);
         this.saveWorkorder();
         $('remarks-summary').innerHTML = wo.remarks;
-        goPage(5,3);
+        this.renderButtons();
+        if(settings.feature_signature) {
+            goPage(5, 18);
+        }
+        else if(settings.feature_pos) {
+            goPage(9, 18);
+        }
+        else {
+            this.uploadWorkorder();
+        }
     },
 
     deleteWorkorder: function()
@@ -607,8 +673,10 @@ window.workorderObject = Class.create({
             photos: [],
             signature: null,
             payment: {},
+            checklist: {},
             finished: false,
             ready: false,
+            checked: false,
             date: wo_date
         };
 
@@ -731,6 +799,7 @@ window.workorderObject = Class.create({
 
                 var btn2 = new Element('button');
                 btn2.innerHTML = 'Verwijderen';
+                btn2.addClassName('button-1');
                 Event.observe(btn2, 'click', function() {
                     row = $(this).parentNode.id.substr(8);
                     wo = Workorder.getTmpWorkorder();
@@ -744,6 +813,7 @@ window.workorderObject = Class.create({
                 if (!s.locked) {
                     var btn1 = new Element('button');
                     btn1.innerHTML = 'Bewerken';
+                    btn1.addClassName('button-2');
                     Event.observe(btn1, 'click', function () {
                         row = $(this).parentNode.id.substr(8);
                         wo = Workorder.getTmpWorkorder();
@@ -804,15 +874,16 @@ window.workorderObject = Class.create({
     {
         wo = this.getTmpWorkorder();
         $('remarks').innerHTML = wo.remarks;
-        $('checklist-container').innerHTML = wo.remarks;
-        if (wo.checklist) {
+        $('checklist-container').innerHTML = '';
+        if (settings.feature_checklist && wo.checklist) {
             for ( i in wo.checklist) {
                 for ( o in wo.checklist[i]) {
-                    // <input id="mark-as-ready" type="checkbox" checked="checked" onchange="Workorder.setReady(this.checked);">
-                    // <label class="checkbox" for="mark-as-ready" style="margin-bottom:0.4em;"> Werkzaamheden zijn gereed</label>
                     var input = new Element('input');
                     input.setAttribute('id',  'checklist-'+i+'-'+o);
                     input.setAttribute('type', 'checkbox');
+                    if(wo.checklist_value && wo.checklist_value['checklist-'+i+'-'+o]) {
+                        input.setAttribute('checked', 'checked');
+                    }
 
                     var label = new Element('label');
                     label.addClassName('checkbox');
@@ -1125,6 +1196,12 @@ window.workorderObject = Class.create({
         this.tmp_workorder.app.workorder = $('workorder').value;
         this.tmp_workorder.app.email = $('email').value;
 
+        this.tmp_workorder.extra = {};
+        var tthis = this;
+        $$('.extra-field').each(function(s, i) {
+            tthis.tmp_workorder.extra[s.id] = $(s).value;
+        });
+
         this.setWorkorder(this.tmp_workorder, this.current_workorder);
 
         s = 0;
@@ -1137,6 +1214,8 @@ window.workorderObject = Class.create({
 
         Workorder.showWorkorders();
         goPage(16);
+
+        this.uploadWorkorder(true);
     },
 
     saveWorkorderRows: function()
@@ -1151,11 +1230,14 @@ window.workorderObject = Class.create({
         wo.signature = image;
         this.setTmpWorkorder(wo);
         this.saveWorkorder();
-        $('sn-5').removeClassName('inactive');
-        $('sn-6').addClassName('inactive');
-        $('sn-6').addClassName('readable');
-        $('sn-3').addClassName('inactive');
-        goPage(9, 5);
+
+        this.renderButtons();
+        if(settings.feature_pos) {
+            goPage(9, 5);
+        }
+        else {
+            this.uploadWorkorder();
+        }
     },
 
     numberInputs: function(enable)
@@ -1220,7 +1302,7 @@ window.workorderObject = Class.create({
     {
         wo = this.getTmpWorkorder();
         cnt = wo.photos.length;
-        if(cnt > 0) {
+        if(cnt > 0 && $('sn-4')) {
             $('sn-4').addClassName('active');
         }
         $('photo-count').innerHTML = cnt;
@@ -1287,15 +1369,23 @@ window.workorderObject = Class.create({
     startPayment: function(paymethod)
     {
 
-        this.showLoader();
         var wo = this.getWorkorder();
         wo.payment = { paymethod: paymethod };
         this.setWorkorder(wo, this.current_workorder);
         this.setTmpWorkorder(wo);
 
+        this.uploadWorkorder();
+    },
+
+    uploadWorkorder: function(tmpUpload)
+    {
+        //this.showLoader();
+        var wo = this.getWorkorder();
+        console.log(wo);
         new Ajax.Request('/main/save', {
             parameters: {
                 app: Object.toJSON(wo.app),
+                tmpUpload: tmpUpload,
                 startWork: wo.startWork,
                 finishWork: wo.finishWork,
                 startTravel: wo.startTravel,
@@ -1305,6 +1395,8 @@ window.workorderObject = Class.create({
                 rows: Object.toJSON(wo.rows),
                 photos: Object.toJSON(wo.photos),
                 signature: wo.signature,
+                checklist: Object.toJSON(wo.checklist_value),
+                extra: Object.toJSON(wo.extra),
                 payment: Object.toJSON(wo.payment)
             },
             onSuccess: function (transport) {
@@ -1375,6 +1467,10 @@ window.workorderObject = Class.create({
                 });
             }
         }, 200);
+    },
+
+    refresh: function() {
+        window.location.href = window.location.href;
     }
 });
 

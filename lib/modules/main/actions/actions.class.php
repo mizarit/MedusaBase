@@ -384,7 +384,14 @@ class MainActions extends Actions {
 
     $app = json_decode($_POST['app'], true);
     $rows = json_decode($_POST['rows'], true);
-    $payment = json_decode($_POST['payment'], true);
+    $extra = json_decode($_POST['extra'], true);
+    $checklist_value = $payment = false;
+    if (isset($_POST['checklist'])) {
+      $checklist_value = json_decode($_POST['checklist'], true);
+    }
+    if (isset($_POST['payment'])) {
+      $payment = json_decode($_POST['payment'], true);
+    }
     $signature = base64_decode($_POST['signature']);
     $images = array();
     $photos = json_decode($_POST['photos'], true);
@@ -393,17 +400,7 @@ class MainActions extends Actions {
         $images[] = base64_decode($photo);
       }
     }
-
-    $params['documenttype'] = 'Factuur';
-    $params['title'] = $app['workorder'];
-    $params['invoicenr'] = $app['workorder'];
-    $params['customernr'] = isset($app['debitor'])?$app['debitor']:'';
-    $params['enddate'] = date('Y-m-d', strtotime('+4 weeks'));
-    $params['customer'] = $app['customer'].PHP_EOL.$app['address'].PHP_EOL.$app['zipcode'].' '.$app['city'];
-    $params['remarks'] = $_POST['remarks'];
-    $params['ready'] = $_POST['ready'];
-    $params['payment'] = $payment;
-
+    $orderrow_data = array();
     foreach ($rows as $row) {
       $tariff = $amount = 0;
       switch ($row['type']) {
@@ -427,7 +424,149 @@ class MainActions extends Actions {
         'tariff' => $tariff,
         'amount' => $amount
       );
+      $orderrow_data[] = array(
+        'd' => $row['desc'],
+        't' => $row['type'],
+        'p' => $tariff,
+        'c' => $amount
+      );
     }
+
+    $appointment = Appointment::model()->findByPk($app['id']);
+    if ($appointment) {
+      $workorder = Workorder::model()->findByPk($appointment->workorder_id);
+      if (!$workorder) {
+        $workorder = new Workorder;
+        $workorder->company_id = $company->id;
+        $workorder->save();
+      }
+      $appointment->workorder_id = $workorder->id;
+      $appointment->save();
+
+      $workorder->resource_id = $appointment->resource_id;
+      $workorder->address_id = $appointment->address_id;
+      $workorder->customer_id = $appointment->customer_id;
+      $workorder->status = 'success';
+      $workorder->date = date('Y-m-d');
+      $workorder->remarks = $_POST['remarks'];
+      $workorder->ready = $_POST['ready'];
+      $workorder->orderrows = json_encode($orderrow_data);
+      //$workorder->signature;
+      $workorder->save();
+
+      $address = Address::model()->findByPk($workorder->address_id);
+      if ($address) {
+        $test = $address->address.' '.$address->zipcode.' '.$address->city;
+        $address->address = $app['address'];
+        $address->zipcode = $app['zipcode'];
+        $address->city = $app['city'];
+        $test2 = $address->address.' '.$address->zipcode.' '.$address->city;
+        if ($test != $test2) {
+          $address->longitude = '';
+          $address->latitude = '';
+          $address->save();
+        }
+      }
+
+      $customer = Customer::model()->findByPk($workorder->customer_id);
+      if ($customer) {
+        $customer->title = $app['customer'];
+        $customer->email = $app['email'];
+        $customer->phone = $app['phone'];
+        $customer->save();
+      }
+
+      $checklists = ChecklistAppointment::model()->findAllByAttributes(new Criteria(array('appointment_id' => $appointment->id)));
+      foreach ($checklists as $checklist) {
+        $rows = ChecklistRow::model()->findAllByAttributes(new Criteria(array('checklist_id' => $checklist->checklist_id, 'active' => 1)));
+        foreach ($rows as $row) {
+          //$json_appointments[$appointment->id]['checklist'][$checklist->checklist_id][$row->id] = $row->label;
+          $value = ChecklistValue::model()->findByAttributes(new Criteria(array('workorder_id' => $workorder->id, 'checklist_row_id' => $row->id)));
+          if (!$value) {
+            $value = new ChecklistValue;
+            $value->workorder_id = $workorder->id;
+            $value->checklist_row_id = $row->id;
+          }
+          if ($checklist_value['checklist-'.$checklist->checklist_id.'-'.$row->id]) {
+            $value->value = $checklist_value['checklist-' . $checklist->checklist_id . '-' . $row->id] ? '1' : '0';
+            $value->save();
+          }
+          else {
+            $value->delete();
+          }
+        }
+      }
+
+      $invoice = Invoice::model()->findByAttributes(new Criteria(array('company_id' => $company->id, 'workorder_id' => $workorder->id)));
+      if (!$invoice) {
+        $invoice = new Invoice;
+        $invoice->company_id = $company->id;
+        $invoice->workorder_id = $workorder->id;
+        $invoice->date = date('Y-m-d');
+      }
+      $invoice->resource_id = $appointment->resource_id;
+      $invoice->address_id = $address->id;
+      $invoice->customer_id = $customer->id;
+      $invoice->status = 'success';
+      $invoice->orderrows = json_encode($orderrow_data);
+      $invoice->no = $app['workorder'];
+
+      $total = 0;
+      if(isset($params['rows']) && count($params['rows']) > 0) {
+        foreach ($params['rows'] as $row) {
+          $total += ($row['amount'] * $row['tariff']);
+        }
+      }
+      $invoice->total = $total;
+      //$invoice->pdf;
+      $invoice->save();
+
+      if ($payment && in_array($payment['paymethod'], array('pin', 'cash'))) {
+        $payment_o = Payment::model()->findByAttributes(new Criteria(array('invoice_id' => $invoice->id)));
+        if (!$payment_o) {
+          $payment_o = new Payment;
+          $payment_o->invoice_id = $invoice->id;
+          $payment_o->paymethod = $payment['paymethod'];
+          $payment_o->status = 'success';
+          $payment_o->total = $total;
+          $payment_o->date = date('Y-m-d H:i:s');
+          $payment_o->save();
+        }
+      }
+    }
+
+    $fields = Field::model()->findAllByAttributes(new Criteria(array('company_id' => $company->id, 'active' => 1)));
+    foreach ($fields as $field) {
+      $key = $field->form == 'customer' ? 'extra_1_'.$field->id : 'extra_2_'.$field->id;
+      $value = FieldValue::model()->findByAttributes(new Criteria(array(
+        'company_id' => $company->id,
+        'field_id' => $field->id,
+        'object_id' => $field->form == 'customer' ? ($customer ? $customer->id : 0) : $appointment->id
+      )));
+      if (!$value) {
+        $value = new FieldValue;
+        $value->company_id = $company->id;
+        $value->field_id = $field->id;
+        $value->object_id = $field->form == 'customer' ? ($customer ? $customer->id : 0) : $appointment->id;
+      }
+      $value->value = $extra['extra_'.($field->form == 'customer'?1:2).'_'.$field->id];
+      $value->save();
+    }
+
+    // signature
+    // pdf invoice
+    // pdf workorder
+    // photos
+
+    $params['documenttype'] = 'Factuur';
+    $params['title'] = $app['workorder'];
+    $params['invoicenr'] = $app['workorder'];
+    $params['customernr'] = isset($app['debitor'])?$app['debitor']:'';
+    $params['enddate'] = date('Y-m-d', strtotime('+4 weeks'));
+    $params['customer'] = $app['customer'].PHP_EOL.$app['address'].PHP_EOL.$app['zipcode'].' '.$app['city'];
+    $params['remarks'] = $_POST['remarks'];
+    $params['ready'] = $_POST['ready'];
+    $params['payment'] = $payment;
 
     $params['companyname'] = $company->getSetting('companyname');
     $params['kvk'] = $company->getSetting('kvk');
@@ -452,15 +591,40 @@ class MainActions extends Actions {
     if (!is_dir(getcwd() . '/workorders/' . $params['invoicenr'])) {
       mkdir(getcwd() . '/workorders/' . $params['invoicenr']);
     }
-    file_put_contents(getcwd().'/workorders/'.$params['invoicenr'].'/signature.png', $signature);
-    $image = imagecreatefrompng(getcwd().'/workorders/'.$params['invoicenr'].'/signature.png');
-    $size = getimagesize(getcwd().'/workorders/'.$params['invoicenr'].'/signature.png');
-    $new_image = imagecreatetruecolor($size[0], $size[1]);
-    $white = imagecolorallocate($new_image,  255, 255, 255);
-    imagefilledrectangle($new_image, 0, 0, $size[0], $size[1], $white);
-    imagecopy($new_image, $image, 0, 0, 0, 0, $size[0], $size[1]);
-    imagejpeg($new_image, getcwd().'/workorders/'.$params['invoicenr'].'/signature.jpg');
-    $params['signature'] = getcwd().'/workorders/'.$params['invoicenr'].'/signature.jpg';
+    if($signature) {
+      file_put_contents(getcwd() . '/workorders/' . $params['invoicenr'] . '/signature.png', $signature);
+      $image = imagecreatefrompng(getcwd() . '/workorders/' . $params['invoicenr'] . '/signature.png');
+      $size = getimagesize(getcwd() . '/workorders/' . $params['invoicenr'] . '/signature.png');
+      $new_image = imagecreatetruecolor($size[0], $size[1]);
+      $white = imagecolorallocate($new_image, 255, 255, 255);
+      imagefilledrectangle($new_image, 0, 0, $size[0], $size[1], $white);
+      imagecopy($new_image, $image, 0, 0, 0, 0, $size[0], $size[1]);
+      imagejpeg($new_image, getcwd() . '/workorders/' . $params['invoicenr'] . '/signature.jpg');
+      $params['signature'] = getcwd() . '/workorders/' . $params['invoicenr'] . '/signature.jpg';
+
+      $payload = array(
+        'customer_id' => $customer->id,
+        'workorder_id' => $workorder->id,
+        'type' => 'signature',
+        'path' => 'http://'.$_SERVER['SERVER_NAME'].'/workorders/' . $params['invoicenr'] . '/signature.jpg'
+      );
+
+      $url = 'http://iwerkbon-site.dev.mizar-it.nl/frontend_dev.php/admin/syncFile';
+
+      $curl = curl_init();
+      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($curl, CURLOPT_URL, $url);
+      curl_setopt($curl, CURLOPT_POST, true);
+      curl_setopt($curl, CURLOPT_POSTFIELDS, array('payload' => json_encode($payload)));
+      $output = json_decode(curl_exec($curl), true);
+      if ($output['status'] == 'success') {
+        $workorder->signature = $output['file'];
+        $workorder->save();
+      }
+    }
+    else {
+      $params['signature'] = '';
+    }
 
     $params['images'] = array();
     $x = 0;
@@ -468,67 +632,126 @@ class MainActions extends Actions {
       $x++;
       file_put_contents(getcwd().'/workorders/'.$params['invoicenr'].'/photo-'.$x.'.jpg', $image);
       $params['images'][] = getcwd().'/workorders/'.$params['invoicenr'].'/photo-'.$x.'.jpg';
-    }
 
-    if (in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
-      $invoice = $this->generateInvoice($params);
-    }
+      $payload = array(
+        'customer_id' => $customer->id,
+        'workorder_id' => $workorder->id,
+        'type' => 'image',
+        'path' => 'http://'.$_SERVER['SERVER_NAME'].'/workorders/'.$params['invoicenr'].'/photo-'.$x.'.jpg'
+      );
 
-    $params['documenttype'] = 'Werkbon';
+      $url = 'http://iwerkbon-site.dev.mizar-it.nl/frontend_dev.php/admin/syncFile';
 
-    $workorder = $this->generateWorkorderCC($params);
-
-    ob_start();
-    include(dirname(__FILE__).'/../templates/_email.php');
-    $mail_html = ob_get_clean();
-
-    $mail = new PHPMailer;
-    $mail->isSendmail();
-    $mail->setFrom($params['sender_email'], $params['sender_name']);
-    $mail->addReplyTo($params['sender_email'], $params['sender_name']);
-
-    $mail->msgHTML($mail_html);
-    $mail->AltBody = $mail_html;
-    if (in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
-      $mail->addStringAttachment(file_get_contents($invoice), 'factuur-' . $params['invoicenr'] . '.pdf');
-    }
-    $mail->addStringAttachment(file_get_contents($workorder), 'werkbon-'.$params['invoicenr'].'.pdf');
-
-    if ($app['email']) {
-      $mail->addAddress($app['email'], $app['customer']);
-      $mail->addCC($params['admin_email'], $params['sender_name']);
-      if (in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
-        $mail->Subject = 'Werkbon en factuur van onze werkzaamheden';
+      $curl = curl_init();
+      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($curl, CURLOPT_URL, $url);
+      curl_setopt($curl, CURLOPT_POST, true);
+      curl_setopt($curl, CURLOPT_POSTFIELDS, array('payload' => json_encode($payload)));
+      $output = json_decode(curl_exec($curl), true);
+      if ($output['status'] == 'success') {
+        //$workorder->signature = $output['file'];
+        //$workorder->save();
       }
-      else {
-        $mail->Subject = 'Werkbon van onze werkzaamheden';
+    }
+
+    if (!$_POST['tmpUpload']) {
+      if ($payment && in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
+        $invoice_file = $this->generateInvoice($params);
+        $payload = array(
+          'customer_id' => $customer->id,
+          'workorder_id' => $workorder->id,
+          'type' => 'pdf',
+          'path' => 'http://' . $_SERVER['SERVER_NAME'] . '/invoices/' . basename($invoice_file)
+        );
+
+        $url = 'http://iwerkbon-site.dev.mizar-it.nl/frontend_dev.php/admin/syncFile';
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, array('payload' => json_encode($payload)));
+        $output = json_decode(curl_exec($curl), true);
+        if ($output['status'] == 'success') {
+          $invoice = Invoice::model()->findByAttributes(new Criteria(array('company_id' => $company->id, 'workorder_id' => $workorder->id)));
+          $invoice->pdf = $output['file'];
+          $invoice->save();
+        }
       }
 
-      $mail->send();
-    }
+      $params['documenttype'] = 'Werkbon';
 
-    $mail->clearAddresses();
+      $workorder_file = $this->generateWorkorderCC($params);
+      $payload = array(
+        'customer_id' => $customer->id,
+        'workorder_id' => $workorder->id,
+        'type' => 'pdf',
+        'path' => 'http://' . $_SERVER['SERVER_NAME'] . '/workorders/' . basename($workorder_file)
+      );
 
-    ob_start();
-    include(dirname(__FILE__).'/../templates/_email_admin.php');
-    $mail_html = ob_get_clean();
-    $mail->msgHTML($mail_html);
-    $mail->AltBody = $mail_html;
-    if (in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
-      $mail->Subject = 'Nieuwe werkbon en factuur';
-    }
-    else {
-      $mail->Subject = 'Nieuwe werkbon';
-    }
+      $url = 'http://iwerkbon-site.dev.mizar-it.nl/frontend_dev.php/admin/syncFile';
 
-    $mail->addAddress($params['admin_email'], $params['sender_name']);
+      $curl = curl_init();
+      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($curl, CURLOPT_URL, $url);
+      curl_setopt($curl, CURLOPT_POST, true);
+      curl_setopt($curl, CURLOPT_POSTFIELDS, array('payload' => json_encode($payload)));
+      $output = json_decode(curl_exec($curl), true);
+      if ($output['status'] == 'success') {
+        $workorder->pdf = $output['file'];
+        $workorder->save();
+      }
 
-    foreach($images as $c => $image) {
-      $mail->addStringAttachment($image, 'situatie-foto-'.($c+1).'.jpg');
-    }
+      ob_start();
+      include(dirname(__FILE__) . '/../templates/_email.php');
+      $mail_html = ob_get_clean();
 
-    if (!$mail->send()) {
-    } else {
+      $mail = new PHPMailer;
+      $mail->isSendmail();
+      $mail->setFrom($params['sender_email'], $params['sender_name']);
+      $mail->addReplyTo($params['sender_email'], $params['sender_name']);
+
+      $mail->msgHTML($mail_html);
+      $mail->AltBody = $mail_html;
+      if ($payment && in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
+        $mail->addStringAttachment(file_get_contents($invoice_file), 'factuur-' . $params['invoicenr'] . '.pdf');
+      }
+      $mail->addStringAttachment(file_get_contents($workorder_file), 'werkbon-' . $params['invoicenr'] . '.pdf');
+
+      if ($app['email']) {
+        $mail->addAddress($app['email'], $app['customer']);
+        $mail->addCC($params['admin_email'], $params['sender_name']);
+        if ($payment && in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
+          $mail->Subject = 'Werkbon en factuur van onze werkzaamheden';
+        } else {
+          $mail->Subject = 'Werkbon van onze werkzaamheden';
+        }
+
+        $mail->send();
+      }
+
+      $mail->clearAddresses();
+
+      ob_start();
+      include(dirname(__FILE__) . '/../templates/_email_admin.php');
+      $mail_html = ob_get_clean();
+      $mail->msgHTML($mail_html);
+      $mail->AltBody = $mail_html;
+      if ($payment && in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
+        $mail->Subject = 'Nieuwe werkbon en factuur';
+      } else {
+        $mail->Subject = 'Nieuwe werkbon';
+      }
+
+      $mail->addAddress($params['admin_email'], $params['sender_name']);
+
+      foreach ($images as $c => $image) {
+        $mail->addStringAttachment($image, 'situatie-foto-' . ($c + 1) . '.jpg');
+      }
+
+      if (!$mail->send()) {
+      } else {
+      }
     }
 
     echo 'OK';
@@ -658,26 +881,27 @@ class MainActions extends Actions {
 
     $rows = array();
     $total = 0;
-    foreach ($params['rows'] as $row) {
-      if ($params['in_btw'] == 1) {
-        $rows[] = array(
-          $row['type'],
-          $row['amount'],
-          '€ '.str_replace(',00', ',-', number_format($row['tariff'] , 2, ',', '.')),
-          '€ '.str_replace(',00', ',-', number_format($row['amount']*$row['tariff'] , 2, ',', '.'))
-        );
-      }
-      else {
-        $r1 = ($row['tariff'] / $vat_factor) * 100;
-        $rows[] = array(
-          $row['type'],
-          $row['amount'],
-          '€ '.str_replace(',00', ',-', number_format($row['tariff'] , 2, ',', '.')),
-          '€ '.str_replace(',00', ',-', number_format($row['amount']*$r1 , 2, ',', '.'))
-        );
-      }
+    if(isset($params['rows']) && count($params['rows']) > 0) {
+      foreach ($params['rows'] as $row) {
+        if ($params['in_btw'] == 1) {
+          $rows[] = array(
+            $row['type'],
+            $row['amount'],
+            '€ ' . str_replace(',00', ',-', number_format($row['tariff'], 2, ',', '.')),
+            '€ ' . str_replace(',00', ',-', number_format($row['amount'] * $row['tariff'], 2, ',', '.'))
+          );
+        } else {
+          $r1 = ($row['tariff'] / $vat_factor) * 100;
+          $rows[] = array(
+            $row['type'],
+            $row['amount'],
+            '€ ' . str_replace(',00', ',-', number_format($row['tariff'], 2, ',', '.')),
+            '€ ' . str_replace(',00', ',-', number_format($row['amount'] * $r1, 2, ',', '.'))
+          );
+        }
 
-      $total += ($row['amount']*$row['tariff']);
+        $total += ($row['amount'] * $row['tariff']);
+      }
     }
 
     for ($c = count($rows); $c < (24 - ($offset/5)); $c++)
@@ -894,13 +1118,15 @@ class MainActions extends Actions {
 
     $rows = array();
     $total = 0;
-    foreach ($params['rows'] as $row) {
-      $rows[] = array(
-        $row['type'],
-        $row['amount'],
+    if(isset($params['rows']) && count($params['rows']) > 0) {
+      foreach ($params['rows'] as $row) {
+        $rows[] = array(
+          $row['type'],
+          $row['amount'],
 
-      );
-      $total += ($row['amount']*$row['tariff']);
+        );
+        $total += ($row['amount'] * $row['tariff']);
+      }
     }
 
     for ($c = count($rows); $c < (16 - ($offset/5)); $c++)
@@ -936,10 +1162,12 @@ class MainActions extends Actions {
       $pdf->Image($image,10 + ($x * 65),170 + ($y * 30), 60);
     }
 
-    $pdf->SetY(230);
-    $pdf->SetFont('Futura','',9);
-    $pdf->Write(5, 'Handtekening klant:');
-    $pdf->Image($params['signature'],10,240, 70);
+    if ($params['signature'] != '') {
+      $pdf->SetY(230);
+      $pdf->SetFont('Futura','',9);
+      $pdf->Write(5, 'Handtekening klant:');
+      $pdf->Image($params['signature'],10,240, 70);
+    }
 
     $pdf->SetY(230);
     $pdf->SetX(120);
@@ -955,11 +1183,11 @@ class MainActions extends Actions {
     if (!is_dir(getcwd().'/workorders')) {
       mkdir(getcwd().'/workorders', 0777);
     }
-    $pdf->Output(getcwd().'/workorders/'.$params['invoicenr'].'.pdf');
+    $pdf->Output(getcwd().'/workorders/WO'.$params['invoicenr'].'.pdf');
 
     //header('Location: /workorders/'.$params['invoicenr'].'.pdf');
     //exit;
-    return getcwd().'/workorders/'.$params['invoicenr'].'.pdf';
+    return getcwd().'/workorders/WO'.$params['invoicenr'].'.pdf';
 
   }
   public function executeAbout($params = array())
@@ -977,6 +1205,28 @@ class MainActions extends Actions {
     }
     $this->user = $user;
     $this->user_id = $user_id;
+
+    $setting_map = array(
+      1 => 'crud_customer',
+      2 => 'crud_orderrows',
+      3 => 'crud_photo',
+      4 => 'crud_history',
+      5 => 'crud_times',
+      6 => 'add_workorder',
+      7 => 'delete_workorder',
+      8 => 'calc_times',
+      9 => 'feature_signature',
+      10 => 'feature_pos',
+      11 => 'feature_times',
+      12 => 'feature_checklist'
+    );
+    $settings = array();
+    foreach ($setting_map as $setting => $name) {
+      $object = Setting::model()->findByAttributes(new Criteria(array('company_id' => $user->company_id,  'skey' => 'app-setting-'.$setting)));
+      $settings[$name] = $object ? (bool)$object->svalue : true;
+    }
+
+    $this->settings = $settings;
 
     if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
       header('Content-Type: application/json');
@@ -1035,10 +1285,32 @@ class MainActions extends Actions {
             $json_appointments[$appointment->id]['checklist'][$checklist->checklist_id][$row->id] = $row->label;
           }
         }
-        // TODO:
-        // prepared order rows
-        // extra fields for customer
-        // extra fields for appointment
+
+        $resource = Resource::model()->findByAttributes(new Criteria(array('xid' => Registry::get('user_id'))));
+        $fields = Field::model()->findAllByAttributes(new Criteria(array('company_id' => $resource->company_id, 'active' => 1)));
+        foreach ($fields as $field) {
+          $key = $field->form == 'customer' ? 'extra_1_'.$field->id : 'extra_2_'.$field->id;
+          $value = FieldValue::model()->findByAttributes(new Criteria(array(
+            'company_id' => $resource->company_id,
+            'field_id' => $field->id,
+            'object_id' => $field->form == 'customer' ? ($customer ? $customer->id : 0) : $appointment->id
+          )));
+
+          $json_appointments[$appointment->id]['extra'][$key] = $value ? $value->value : '';
+        }
+
+        $orderrows = json_decode($appointment->orderrows, true);
+        $json_appointments[$appointment->id]['rows'] = array();
+        if ($orderrows) {
+          foreach ($orderrows as $orderrow) {
+            $json_appointments[$appointment->id]['rows'][] = array(
+              'type' => $orderrow['t'],
+              'cost' => $orderrow['p'],
+              'amount' => $orderrow['c'],
+              'desc' => $orderrow['d']
+            );
+          }
+        }
       }
     }
 

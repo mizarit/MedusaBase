@@ -13,7 +13,7 @@ if ($count > 0) {
 
 
   <div id="sidebar-left-inner" class="sidebar-inner" style="overflow:scroll;width:100%;">
-    <h3><i class="fa fa-arrow-left" id="nav-back" onclick="closeSubmenu();"></i><img src="/img/logo-wide.png"><i class="fa fa-close" id="nav-close" onclick="closeSubmenu();toggleSidebar('sidebar-left');"></i></h3>
+    <h3><i class="fa fa-arrow-left" id="nav-back" onclick="closeSubmenu();"></i><img src="/img/logo-wide.png" style="height: 1em;"><i class="fa fa-close" id="nav-close" onclick="closeSubmenu();toggleSidebar('sidebar-left');"></i></h3>
     <div id="mainnav" class="active">
       <ul style="margin-top:0.5em;">
         <?php
@@ -23,7 +23,9 @@ if ($count > 0) {
         <?php } ?>
 
         <li onclick="setActive(this);goPage(2);toggleSidebar('sidebar-left');"><i class="fa fa-calendar"></i> Afspraken</li>
-        <!--<li onclick="setActive(this);goPage(1);toggleSidebar('sidebar-left');"><i class="fa fa-users"></i> Klanten</li>-->
+        <?php if($settings['crud_history']) { ?>
+        <li onclick="setActive(this);goPage(1);toggleSidebar('sidebar-left');"><i class="fa fa-users"></i> Klanten</li>
+        <?php } ?>
         <li onclick="setActive(this);Workorder.showWorkorders();goPage(16);toggleSidebar('sidebar-left');"><i class="fa fa-wrench"></i> Werkbonnen (<span id="workorder-count">0</span>)</li>
         <!--<li onclick="setActive(this);goPage(10);toggleSidebar('sidebar-left');"><i class="fa fa-comment"></i> Notities</li>-->
       </ul>

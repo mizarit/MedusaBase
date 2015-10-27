@@ -9,8 +9,9 @@
       <li>Er zijn geen werkbonnen gevonden.</li>
     </ul>
   </div>
+  <?php if($settings['add_workorder']) { ?>
   <ul class="subnav">
     <li id="new-workorder" class="save">Nieuwe werkbon</li>
   </ul>
-
+  <?php } ?>
 </div>

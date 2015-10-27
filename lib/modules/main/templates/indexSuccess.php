@@ -4,6 +4,7 @@
   //var iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
   var isIos = <?php echo isset($_SESSION['isIos'])?'true':'false'; ?>;
   var isAndroid = <?php echo isset($_SESSION['isAndroid'])?'true':'false'; ?>;
+  var settings = <?php echo json_encode($settings); ?>;
   <?php $iOS = isset($_SESSION['isIos']); ?>
 </script>
 <div id="container<?php //if($iOS) echo ' class="iOS"'; ?>">
