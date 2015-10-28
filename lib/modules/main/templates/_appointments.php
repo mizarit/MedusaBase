@@ -74,6 +74,9 @@
   var shortlistItems = <?php echo json_encode(Registry::get('products')); ?>;
 Event.observe(window, 'load', function() {
   Workorder.loadAppointmentForDate('<?php echo date('Y-m-d'); ?>');
+  Workorder.loadWorkordersFromBackend('<?php echo date('Y-m-d'); ?>');
   Workorder.setShortlistItems(shortlistItems);
+
+  Workorder.loadConsumers();
 });
 </script>

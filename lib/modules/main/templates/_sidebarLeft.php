@@ -45,47 +45,45 @@ if ($count > 0) {
 
     </div>
     <div id="subnav">
-      <h4>Instellingen</h4>
-
       <?php if(isset($_SESSION['isAndroid']) && $_SESSION['isAndroid']){ ?>
         <h5>Toetsenbord</h5>
         <p style="display:block;font-size:1.2em;margin:0;padding: 0.1em 0.6em 0.3em 0.6em;">Schakel Slim Toetsenbord uit als je problemen ervaart bij het invoeren van getallen.</p>
         <ul>
-          <li>
+          <li style="position:relative;">
             <label for="smartkeyboard">Slim toetsenbord</label>
-            <input id="smartkeyboard" type="checkbox" checked="checked" onchange="Android.setSetting('smartkeyboard', this.checked ? '1' : '0');Workorder.numberInputs(this.checked);"><span onclick="$('smartkeyboard').click();" class="checkbox"></span>
+            <input id="smartkeyboard" type="checkbox" checked="checked" onchange="Android.setSetting('smartkeyboard', this.checked ? '1' : '0');Workorder.numberInputs(this.checked);"><span style="position:absolute;right:0;" onclick="$('smartkeyboard').click();" class="checkbox"></span>
           </li>
         </ul>
         <h5>Notificaties</h5>
         <ul>
-          <li>
+          <li style="position:relative;">
             <label for="notifications">Notificaties ontvangen</label>
-            <input id="notifications" type="checkbox" checked="checked" onchange="Android.setSetting('notifications', this.checked ? '1' : '0');$('notifications-vibrate').disabled=this.checked?'':'disabled';$('notifications-sound').disabled=this.checked?'':'disabled';"><span onclick="$('notifications').click();" class="checkbox"></span>
+            <input id="notifications" type="checkbox" checked="checked" onchange="Android.setSetting('notifications', this.checked ? '1' : '0');$('notifications-vibrate').disabled=this.checked?'':'disabled';$('notifications-sound').disabled=this.checked?'':'disabled';"><span style="position:absolute;right:0;" onclick="$('notifications').click();" class="checkbox"></span>
           </li>
-          <li>
+          <li style="position:relative;">
             <label for="notifications-sound">Geluid toestaan</label>
-            <input id="notifications-sound" type="checkbox" checked="checked" onchange="Android.setSetting('sound', this.checked ? '1' : '0');"><span class="checkbox" onclick="$('notifications-sound').click();"></span>
+            <input id="notifications-sound" type="checkbox" checked="checked" onchange="Android.setSetting('sound', this.checked ? '1' : '0');"><span style="position:absolute;right:0;" class="checkbox" onclick="$('notifications-sound').click();"></span>
           </li>
-          <li>
+          <li style="position:relative;">
             <label for="notifications-vibrate">Trillen toestaan</label>
-            <input id="notifications-vibrate" type="checkbox" checked="checked" onchange="Android.setSetting('vibrate', this.checked ? '1' : '0');"><span class="checkbox" onclick="$('notifications-vibrate').click();"></span>
+            <input id="notifications-vibrate" type="checkbox" checked="checked" onchange="Android.setSetting('vibrate', this.checked ? '1' : '0');"><span style="position:absolute;right:0;" class="checkbox" onclick="$('notifications-vibrate').click();"></span>
           </li>
         </ul>
       <?php } ?>
       <?php  if(isset($_SESSION['isIos']) && $_SESSION['isIos']){ ?>
         <h5>Notificaties</h5>
         <ul>
-          <li>
+          <li style="position:relative;">
             <label for="notifications">Notificaties ontvangen</label>
-            <input id="notifications" type="checkbox" checked="checked" onchange="iOS.setSetting('notifications', this.checked ? '1' : '0');$('notifications-vibrate').disabled=this.checked?'':'disabled';$('notifications-sound').disabled=this.checked?'':'disabled';"><span onclick="$('notifications').click();" class="checkbox"></span>
+            <input id="notifications" type="checkbox" checked="checked" onchange="iOS.setSetting('notifications', this.checked ? '1' : '0');$('notifications-vibrate').disabled=this.checked?'':'disabled';$('notifications-sound').disabled=this.checked?'':'disabled';"><span style="position:absolute;right:0;" onclick="$('notifications').click();" class="checkbox"></span>
           </li>
-          <li>
+          <li style="position:relative;">
             <label for="notifications-sound">Geluid toestaan</label>
-            <input id="notifications-sound" type="checkbox" checked="checked" onchange="iOS.setSetting('sound', this.checked ? '1' : '0');"><span class="checkbox" onclick="$('notifications-sound').click();"></span>
+            <input id="notifications-sound" type="checkbox" checked="checked" onchange="iOS.setSetting('sound', this.checked ? '1' : '0');"><span style="position:absolute;right:0;" class="checkbox" onclick="$('notifications-sound').click();"></span>
           </li>
-          <li>
+          <li style="position:relative;">
             <label for="notifications-vibrate">Trillen toestaan</label>
-            <input id="notifications-vibrate" type="checkbox" checked="checked" onchange="iOS.setSetting('vibrate', this.checked ? '1' : '0');"><span class="checkbox" onclick="$('notifications-vibrate').click();"></span>
+            <input id="notifications-vibrate" type="checkbox" checked="checked" onchange="iOS.setSetting('vibrate', this.checked ? '1' : '0');"><span style="position:absolute;right:0;" class="checkbox" onclick="$('notifications-vibrate').click();"></span>
           </li>
         </ul>
       <?php } ?>

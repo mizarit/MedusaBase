@@ -12,7 +12,7 @@
   <script type="text/javascript" src="/js/prototype.js"></script>
   <script type="text/javascript" src="/js/scriptaculous.js?load=effects"></script>
   <script type="text/javascript" src="/js/effects.js"></script>
-  <script type="text/javascript" src="/js/helpers.js"></script>
+  <script type="text/javascript" src="/js/helpers.js?v=1"></script>
   <script type="text/javascript" src="/js/sidebar.js"></script>
   <?php if(isset($_SESSION['isIos']) && $_SESSION['isIos']) { ?>
   <script type="text/javascript" src="/js/app-ios.js"></script>
@@ -20,7 +20,7 @@
   <?php if(isset($_SESSION['isAndroid']) && $_SESSION['isAndroid']) { ?>
   <script type="text/javascript" src="/js/app-android.js"></script>
   <?php } ?>
-  <script type="text/javascript" src="/js/mobile.js"></script>
+  <script type="text/javascript" src="/js/mobile.js?v=1"></script>
   <script type="text/javascript" src="/js/swipeable.js"></script>
   <script type="text/javascript" src="/js/signature.js"></script>
   <title>iWerkbon</title>

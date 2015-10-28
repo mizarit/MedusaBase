@@ -33,6 +33,7 @@
     </div>
   </div>
   <?php require(dirname(__FILE__).'/_consumers.php'); ?>
+  <?php require(dirname(__FILE__).'/_consumer.php'); ?>
   <?php require(dirname(__FILE__).'/_appointments.php'); ?>
   <?php require(dirname(__FILE__).'/_worksheets.php'); ?>
   <?php require(dirname(__FILE__).'/_orderrows.php'); ?>

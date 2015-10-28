@@ -101,7 +101,7 @@ function goPage(page_id) {
     //Android.log('next');
     //Android.log(page_stack.join());
 
-    for(i=1;i<19;i++) {
+    for(i=1;i<20;i++) {
         if (!$('page-'+i)) continue;
         if (page_id == i) {
             $('page-'+i).addClassName('active');
@@ -146,7 +146,7 @@ function goPage(page_id) {
         16: 'Werkbonnen',
         17: 'Snelkeuze',
         18: 'Controleren',
-        19: 'page 19'
+        19: 'Klant details'
     };
     $('page-title').innerHTML = page_titles[page_id];
     /*

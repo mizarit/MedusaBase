@@ -436,8 +436,27 @@ window.workorderObject = Class.create({
         }
     },
 
-    loadWorkorder: function(workorder_id) {
+    loadWorkorder: function(workorder_id, in_loading) {
+        if (!this.workorders[workorder_id] && !in_loading) {
+            new Ajax.Request('/main/loadWorkorders', {
+                parameters: {
+                    appointment_id: workorder_id
+                },
+                onSuccess: function(transport) {
+                    for(i in transport.responseJSON) {
+                        if (!transport.responseJSON.hasOwnProperty(i)) continue;
+                        if (i == 'resource' || i == 'xid' || i == 'username') continue;
+                        for (x in transport.responseJSON[i]) {
+                            if (!transport.responseJSON[i].hasOwnProperty(x)) continue;
 
+                            Workorder.workorders[x] = transport.responseJSON[i][x];
+                            Workorder.loadWorkorder(x, true);
+                        }
+
+                    }
+                }
+            });
+        }
         if (this.workorders[workorder_id]) {
             this.tmp_workorder = this.workorders[workorder_id];
             this.current_workorder = workorder_id;
@@ -504,8 +523,10 @@ window.workorderObject = Class.create({
          8 check
          6 signature
          5 pos
-
          */
+
+        $('photo-count').innerHTML = wo.photos.length;
+
         if(settings.feature_times) {
             // start and end time buttons are shown
             $('sn-8').addClassName('inactive');
@@ -609,9 +630,11 @@ window.workorderObject = Class.create({
         $('remarks-summary').innerHTML = wo.remarks;
         this.renderButtons();
         if(settings.feature_signature) {
+            this.uploadWorkorder(true);
             goPage(5, 18);
         }
         else if(settings.feature_pos) {
+            this.uploadWorkorder(true);
             goPage(9, 18);
         }
         else {
@@ -733,7 +756,87 @@ window.workorderObject = Class.create({
         if (two) {
             this.tmp_workorder = two;
         }
+    },
 
+    loadWorkordersFromBackend: function(date)
+    {
+        Workorder.cdate = date;
+        new Ajax.Request('/main/loadWorkorders', {
+            parameters: {
+                date: date
+            },
+            onSuccess: function(transport) {
+                /*workorders = localStorage.getItem('workorders');
+                if(!workorders) {
+                    workorders = [];
+                }
+                else {
+                    workorders = JSON.parse(workorders);
+                }*/
+                workorders = [];
+                for (i in transport.responseJSON) {
+                    if(i == Workorder.cdate) {
+                        for (x in transport.responseJSON[i]) {
+
+                            if(!transport.responseJSON[i].hasOwnProperty(x)) continue;
+                            workorders.push(x);
+                            test = localStorage.getItem('workorder_'+x);
+                            //if(!test) {
+                                localStorage.setItem('workorder_'+x, JSON.stringify(transport.responseJSON[i][x]));
+                                Workorder.workorders[x] = transport.responseJSON[i][x];
+                           // }
+                        }
+
+                    }
+                }
+                localStorage.setItem('workorders', JSON.stringify(workorders));
+
+                 $('workorder-list').innerHTML = '';
+                 var s = 0;
+                 var ddate = date;
+                 for (i in Workorder.workorders) {
+                     if (Workorder.workorders.hasOwnProperty(i)) {
+                         if(Workorder.workorders[i].date == ddate) {
+                            s++;
+                         }
+                     }
+                 }
+
+                 if (s > 0) {
+                    for (i in Workorder.workorders) {
+                        if (Workorder.workorders.hasOwnProperty(i)) {
+                            s = Workorder.workorders[i];
+                            if (s.date != ddate) continue;
+
+                            var li = new Element('li');
+                            li.innerHTML = s.app.orderrows[0] + '<br>' + s.app.workorder + '<br>' + s.app.time + '<i class="fa fa-chevron-right"></i>';
+                            if (s.finished) {
+                                li.addClassName('finished');
+                            }
+
+                            eval("Event.observe(li, 'click', function() { Workorder.loadWorkorder("+ s.appointment_id + ");goPage(3,16); });");
+
+                            $('workorder-list').insert(li);
+                        }
+                    }
+                 }
+                 else {
+                    var li = new Element('li');
+                    li.innerHTML = 'Er zijn geen werkbonnen gevonden.';
+                    li.setAttribute('style', 'height:auto;');
+                    $('workorder-list').insert(li);
+                 }
+
+
+
+
+
+
+            },
+            onFailure: function()
+            {
+            }
+        });
     },
 
     setWorkorder: function(workorder, workorder_id) {
@@ -1222,6 +1325,7 @@ window.workorderObject = Class.create({
     {
         this.setWorkorder(this.tmp_workorder, this.current_workorder);
         $('sn-3').addClassName('active');
+        this.uploadWorkorder(true);
         toast('Wijzigingen opgeslagen.');
     },
 
@@ -1347,6 +1451,8 @@ window.workorderObject = Class.create({
             li.setAttribute('style', 'height:auto;');
             $('workorder-list').insert(li);
         }
+
+        this.loadWorkordersFromBackend(date);
     },
 
     showWorkorders: function()
@@ -1374,14 +1480,13 @@ window.workorderObject = Class.create({
         this.setWorkorder(wo, this.current_workorder);
         this.setTmpWorkorder(wo);
 
-        this.uploadWorkorder();
+        this.uploadWorkorder(true);
     },
 
     uploadWorkorder: function(tmpUpload)
     {
         //this.showLoader();
         var wo = this.getWorkorder();
-        console.log(wo);
         new Ajax.Request('/main/save', {
             parameters: {
                 app: Object.toJSON(wo.app),
@@ -1471,6 +1576,95 @@ window.workorderObject = Class.create({
 
     refresh: function() {
         window.location.href = window.location.href;
+    },
+
+    loadConsumers: function() {
+
+        consumers = localStorage.getItem('consumers');
+        list_data_expires = localStorage.getItem('expire_consumers');
+        var now = Date.now() / 1000 | 0;
+        if (1==1 ||!consumers || list_data_expires < (now - 3600)) { // 1 hours
+            consumers = false;
+        }
+        if (!consumers) {
+            new Ajax.Request('/main/consumers', {
+                onSuccess: function (transport) {
+                    localStorage.setItem('consumers', JSON.stringify(transport.responseJSON));
+                    localStorage.setItem('expire_consumers', now);
+                    Workorder.renderConsumers(transport.responseJSON);
+                }
+
+            });
+        }
+        else {
+            this.renderConsumers(JSON.parse(consumers));
+        }
+    },
+
+    renderConsumers: function(consumers) {
+        $('consumer-list').innerHTML = '';
+        for (i in consumers) {
+            consumer = typeof(consumers[i]) == 'object' ? consumers[i] : JSON.parse(consumers[i]);
+            var li = new Element('li');
+            li.insert(consumer[1]);
+            var span = new Element('span');
+            span.innerHTML = consumer[2]+' '+consumer[3]+' '+consumer[4];
+            li.insert(span);
+
+            i = new Element('i');
+            i.addClassName('fa');
+            i.addClassName('fa-chevron-right');
+            li.insert(i);
+
+            eval("Event.observe(li, 'click', function() { Workorder.loadConsumer("+consumer[0]+"); } );");
+            $('consumer-list').insert(li);
+        }
+    },
+
+    loadConsumer: function(consumer_id)
+    {
+        new Ajax.Request('/main/consumerDetails', {
+            parameters: {
+                id: consumer_id
+            },
+            onSuccess: function (transport) {
+                for (i in transport.responseJSON) {
+                    if ($(i)) {
+                        $(i).value = transport.responseJSON[i];
+                    }
+                }
+                $('customer-workorder-list').innerHTML = '';
+                if(transport.responseJSON['customer-workorders'].length > 0) {
+                    for (i in transport.responseJSON['customer-workorders']) {
+                        if (!transport.responseJSON['customer-workorders'].hasOwnProperty(i)) continue;
+                        wo = transport.responseJSON['customer-workorders'][i];
+                        var li = new Element('li');
+                        li.insert(wo.date+' - '+wo.workorder+'<br>');
+                        var span = new Element('span');
+                        span.insert(wo.resource);
+                        li.insert(span);
+
+                        i = new Element('i');
+                        i.addClassName('fa');
+                        i.addClassName('fa-chevron-right');
+                        li.insert(i);
+
+                        eval("Event.observe(li, 'click', function() { Workorder.loadWorkorder("+wo.app_id+"); goPage(3); });");
+
+                        $('customer-workorder-list').insert(li);
+                    }
+                }
+                else {
+                    $('customer-workorder-list').innerHTML = '<li>Deze klant heeft geen werkbonnen.</li>';
+                }
+                goPage(19);
+            }
+        });
+    },
+
+    saveCustomer: function()
+    {
+        alert('save not implemented');
     }
 });
 

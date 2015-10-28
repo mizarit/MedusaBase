@@ -313,7 +313,7 @@ button.delayed {
 }
 
 #page-1, #page-2, #page-3, #page-4, #page-5, #page-6, #page-7, #page-8, #page-9, #page-10, #page-11, #page-12,
-#page-13, #page-14, #page-15, #page-16, #page-17, #page-18 {
+#page-13, #page-14, #page-15, #page-16, #page-17, #page-18, #page-19 {
   position: absolute;
   width:100%;
   transition: all 0.2s;
@@ -327,7 +327,7 @@ button.delayed {
 }
 
 #page-2, #page-3, #page-4, #page-5, #page-6, #page-7, #page-8, #page-9, #page-10, #page-11, #page-12,
-#page-13, #page-14, #page-15, #page-16, #page-17, #page-18 {
+#page-13, #page-14, #page-15, #page-16, #page-17, #page-18, #page-19 {
     -webkit-transform: translate(-100%,0); /* iOS makes a mess with the zoom when translated to the right, even if overflow hidden is used on the parent */
     -o-transform: translate(-100%,0);
     -moz-transform: translate(-100%,0);
@@ -335,7 +335,7 @@ button.delayed {
 }
 
 .iOS #page-2, .iOS #page-3, .iOS #page-4, .iOS #page-5, .iOS #page-6, .iOS #page-7, .iOS #page-8, .iOS #page-9, .iOS #page-10, .iOS #page-11, .iOS #page-12,
-.iOS #page-13, .iOS #page-14, .iOS #page-15, .iOS #page-16, .iOS #page-17, .iOS #page-18 {
+.iOS #page-13, .iOS #page-14, .iOS #page-15, .iOS #page-16, .iOS #page-17, .iOS #page-18, .iOS #page-19 {
     -webkit-transform: translate(-100%,0);
     -o-transform: translate(-100%,0);
     -moz-transform: translate(-100%,0);
@@ -343,7 +343,7 @@ button.delayed {
 }
 
 #page-1.active, #page-2.active, #page-3.active, #page-4.active, #page-5.active, #page-6.active, #page-7.active, #page-8.active, #page-9.active, #page-10.active,
-#page-11.active, #page-12.active, #page-13.active, #page-14.active, #page-15.active, #page-16.active, #page-17.active, #page-18.active {
+#page-11.active, #page-12.active, #page-13.active, #page-14.active, #page-15.active, #page-16.active, #page-17.active, #page-18.active, #page-19.active {
   transform: translate(0,0);
   -webkit-transform: translate(0,0);
   -o-transform: translate(0,0);
@@ -500,14 +500,16 @@ input[type=checkbox]:disabled + .checkbox:before {
 
 #consumer-list,
 #workorder-list,
-#appointment-list {
+#appointment-list,
+#customer-workorder-list {
     margin: 0;
     padding: 0;
 }
 
 #consumer-list li,
 #workorder-list li,
-#appointment-list li {
+#appointment-list li,
+#customer-workorder-list li {
     list-style: none;
     margin: 0;
     padding: 0 0 0.1em 0;
@@ -519,21 +521,36 @@ input[type=checkbox]:disabled + .checkbox:before {
     min-height: 6.6em;
 }
 
+#consumer-list li,
+#customer-workorder-list li {
+    min-height: 2em;
+}
+
+#customer-workorder-list li {
+    height: 3em;
+}
+
 #workorder-list li {
     padding: 0.1em 0.3em;
 }
 
 #consumer-list li i,
 #workorder-list li i,
-#appointment-list li i {
+#appointment-list li i,
+#customer-workorder-list li i {
   position: absolute;
     right: 0;
     top: 0;
     line-height: 5em;
     font-size: 1.3em;
-
 }
 
+#customer-workorder-list li i {
+    line-height: 2.5em;
+}
+#consumer-list li i {
+    line-height: 2em;
+}
 #consumer-list li span,
 #workorder-list li span,
 #appointment-list li span {

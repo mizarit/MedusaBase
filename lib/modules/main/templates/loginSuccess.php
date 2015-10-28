@@ -1,22 +1,19 @@
 <div id="main" onclick="clearSidebars();">
   <div id="overlay"></div>
 
-  <div id="header">
-    <h2 style="font-weight:bold;color:#fff;margin:0;position:relative;padding:0;text-transform: uppercase;font-size:2.1em;line-height:1.6em"></h2>
-  </div>
+  <div style="text-align:center;padding: 1em 0;"><img src="/img/logo-iwerkbon.png"></div>
   <div style="padding: 0;margin:0;">
-  <h2 style="margin:0;padding:0;border-top:#fff 1px solid;background:#2ea6dd;font-size:1.5em;line-height:1.6em;color:#fff;">Inloggen</h2>
     <form action="#" method="post" id="login-form">
     <div style="padding: 0.5em;">
 
 
       <div class="form-row">
         <div class="form-label"><label for="username">Gebruikersnaam</label></div>
-        <input type="text" name="username" id="username" placeholder="Gebruikersnaam" value="" class="smart-input"<?php if (isset($_SESSION['isIos'])&&$_SESSION['isIos']) echo ' style="width:90%"'; ?>>
+        <input autocomplete="off" type="text" name="username" id="username" placeholder="Gebruikersnaam" value="" class="smart-input" style="width:98%">
       </div>
       <div class="form-row">
         <div class="form-label"><label for="password">Wachtwoord</label></div>
-        <input type="password" name="password" id="password" value=""<?php if (isset($_SESSION['isIos'])&&$_SESSION['isIos']) echo ' style="width:90%"'; ?>>
+        <input type="password" name="password" id="password" value="" style="width:98%">
       </div>
     </div>
 

@@ -375,6 +375,86 @@ class MainActions extends Actions {
     exit;
   }
 
+  public function executeConsumers($params = array())
+  {
+    $user_id = Registry::get('user_id');
+    $user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+    $resource = Resource::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+    $company = Company::model()->findByPk($resource->company_id);
+
+    $result = array();
+
+    $customers = Customer::model()->findAllByAttributes(new Criteria(array('company_id' => $company->id)));
+    $customers = array_slice($customers, 0, 100);
+    foreach ($customers as $customer) {
+      $address = Address::model()->findByPk($customer->address_id);
+      $result[strtolower($customer->title.$customer->id)] = array(
+        $customer->id,
+        $customer->title,
+        $address->address,
+        $address->zipcode,
+        $address->city
+      );
+    }
+    ksort($result);
+
+    header('Content-Type: application/json');
+    echo json_encode($result);
+    exit;
+  }
+
+  public function executeConsumerDetails($params = array()) {
+    $user_id = Registry::get('user_id');
+    $user = User::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+    $resource = Resource::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+    $company = Company::model()->findByPk($resource->company_id);
+
+    $result = array();
+
+    $customer = Customer::model()->findByPk($_POST['id']);
+    if ($customer) {
+      $address = Address::model()->findByPk($customer->address_id);
+      $result['customer-title'] = $customer->title;
+      $result['customer-address'] = $address ? $address->address : '';
+      $result['customer-zipcode'] = $address ? $address->zipcode : '';
+      $result['customer-city'] = $address ? $address->city : '';
+      $result['customer-email'] = $customer->email;
+      $result['customer-phone'] = $customer->phone;
+      $result['customer-workorders'] = array();
+
+
+      $resource = Resource::model()->findByAttributes(new Criteria(array('xid' => Registry::get('user_id'))));
+      $fields = Field::model()->findAllByAttributes(new Criteria(array('company_id' => $resource->company_id, 'active' => 1)));
+      foreach ($fields as $field) {
+        if ($field->form != 'customer') continue;
+        $key = $field->form == 'customer' ? 'extra_1_'.$field->id : 'extra_2_'.$field->id;
+        $value = FieldValue::model()->findByAttributes(new Criteria(array(
+          'company_id' => $resource->company_id,
+          'field_id' => $field->id,
+          'object_id' => $field->form == 'customer' ? ($customer ? $customer->id : 0) : $appointment->id
+        )));
+
+        $result['consumer-'.$key] = $value ? $value->value : '';
+      }
+
+      $workorders = Workorder::model()->findAllByAttributes(new Criteria(array('customer_id' => $customer->id)));
+      foreach ($workorders as $workorder) {
+        $wo_resource = Resource::model()->findByPk($workorder->resource_id);
+        $appointment = Appointment::model()->findByAttributes(new Criteria(array('workorder_id' => $workorder->id)));
+        $result['customer-workorders'][] = array(
+          'app_id' => $appointment->id,
+          'date' => date('d-m-Y', strtotime($workorder->date)),
+          'workorder' => 'WO-'.str_pad($workorder->id, 8, '0', STR_PAD_LEFT),
+          'resource' => $wo_resource ? $wo_resource->name : 'Onbekend'
+        );
+      }
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode($result);
+    exit;
+  }
+
   public function executeSave($params = array())
   {
     $user_id = Registry::get('user_id');
@@ -383,8 +463,8 @@ class MainActions extends Actions {
     $company = Company::model()->findByPk($resource->company_id);
 
     $app = json_decode($_POST['app'], true);
-    $rows = json_decode($_POST['rows'], true);
-    $extra = json_decode($_POST['extra'], true);
+    $rows = isset($_POST['rows']) ? json_decode($_POST['rows'], true) : array();
+    $extra = isset($_POST['extra']) ? json_decode($_POST['extra'], true) : array();
     $checklist_value = $payment = false;
     if (isset($_POST['checklist'])) {
       $checklist_value = json_decode($_POST['checklist'], true);
@@ -442,14 +522,13 @@ class MainActions extends Actions {
       }
       $appointment->workorder_id = $workorder->id;
       $appointment->save();
-
       $workorder->resource_id = $appointment->resource_id;
       $workorder->address_id = $appointment->address_id;
       $workorder->customer_id = $appointment->customer_id;
       $workorder->status = 'success';
       $workorder->date = date('Y-m-d');
       $workorder->remarks = $_POST['remarks'];
-      $workorder->ready = $_POST['ready'];
+      $workorder->ready = $_POST['ready']==='true';
       $workorder->orderrows = json_encode($orderrow_data);
       //$workorder->signature;
       $workorder->save();
@@ -654,7 +733,7 @@ class MainActions extends Actions {
       }
     }
 
-    if (!$_POST['tmpUpload']) {
+    if (!isset($_POST['tmpUpload']) || !$_POST['tmpUpload']) {
       if ($payment && in_array($payment['paymethod'], array('pin', 'cash', 'invoice'))) {
         $invoice_file = $this->generateInvoice($params);
         $payload = array(
@@ -1316,6 +1395,137 @@ class MainActions extends Actions {
 
     header('Content-Type: application/json');
     echo json_encode(array(date('y-m-d', strtotime($date)) => $json_appointments, 'username' => $resource->name, 'resource' => $resource->id, 'xid' => Registry::get('user_id')));
+    exit;
+  }
+
+  public function executeLoadWorkorders($params = array())
+  {
+    $json_workorders = array();
+    $user_id = Registry::get('user_id');
+    $resource = Resource::model()->findByAttributes(new Criteria(array('xid' => $user_id)));
+
+    if (isset($_POST['appointment_id'])) {
+      $appointment = Appointment::model()->findByPk($_POST['appointment_id']);
+      $workorder = Workorder::model()->findByPk($appointment->workorder_id);
+      $workorders = array($workorder);
+      $date = date('Y-m-d', strtotime($workorder->date));
+    }
+    else {
+      $date = date('Y-m-d', strtotime($_POST['date']));
+      $workorders = Workorder::model()->findAllByAttributes(new Criteria(array(
+        'resource_id' => $resource->id
+      )));
+    }
+
+    if ($workorders) {
+      foreach ($workorders as $workorder) {
+        if ($date != date('Y-m-d', strtotime($workorder->date))) continue;
+        $customer = false;
+        if ($workorder->customer_id > 0) {
+          $customer = Customer::model()->findByPk($workorder->customer_id);
+        }
+        $address = Address::model()->findByPk($workorder->address_id);
+
+        $appointment = Appointment::model()->findByAttributes(new Criteria(array('workorder_id' => $workorder->id)));
+
+        $json_workorders[$appointment->id] = array(
+          'app' => array(
+            'id' => $appointment->id,
+            'time' => date('H:i', strtotime($appointment->date)).' - '.date('H:i', strtotime($appointment->enddate)),
+            'workorder' => 'WO-'.str_pad($workorder->id, 8, '0', STR_PAD_LEFT),
+            'rows' => '[]',
+            'orderrows' => array($appointment->title)
+          ),
+          'appointment_id' => $appointment->id,
+          'checked' => false,
+          'checklist' => array(),
+          'checklist_value' => array(),
+          'date' => date('Y-m-d', strtotime($workorder->date)),
+          'finishTravel' => null,
+          'finishWork' => $workorder->finish ? date('H:i', strtotime($workorder->finish)) : null,
+          'finished' => false,
+          'payment' => array(),
+          'photos' => array(),
+          'ready' => $workorder->ready,
+          'remarks' => $workorder->remarks,
+          'rows' => array(),
+          'signature' => '',
+          'startTravel' => null,
+          'startWork' => $workorder->start ? date('H:i', strtotime($workorder->start)) : null
+        );
+
+        if ($customer) {
+          $json_workorders[$appointment->id]['app']['customer'] = $customer->title;
+          $json_workorders[$appointment->id]['app']['contact'] = $customer->title;
+          $json_workorders[$appointment->id]['app']['phone'] = $customer->phone;
+          $json_workorders[$appointment->id]['app']['email'] = $customer->email;
+          $json_workorders[$appointment->id]['app']['debitor'] = '';
+        }
+
+        if ($address) {
+          $json_workorders[$appointment->id]['app']['address'] = $address->address;
+          $json_workorders[$appointment->id]['app']['zipcode'] = $address->zipcode;
+          $json_workorders[$appointment->id]['app']['city'] = $address->city;
+        }
+
+        $files = File::model()->findAllByAttributes(new Criteria(array('workorder_id' => $workorder->id, 'ftype' => 'image')));
+        foreach($files as $file) {
+          $data = @file_get_contents('http://iwerkbon-site.dev.mizar-it.nl'.$file->path);
+          if ($data) {
+            $json_workorders[$appointment->id]['photos'][] = base64_encode($data);
+          }
+        }
+
+        $checklists = ChecklistAppointment::model()->findAllByAttributes(new Criteria(array('appointment_id' => $appointment->id)));
+        foreach ($checklists as $checklist) {
+          $rows = ChecklistRow::model()->findAllByAttributes(new Criteria(array('checklist_id' => $checklist->checklist_id, 'active' => 1)));
+          foreach ($rows as $row) {
+            $json_workorders[$appointment->id]['checklist'][$checklist->checklist_id][$row->id] = $row->label;
+            // see if it is checked
+            $value = ChecklistValue::model()->findByAttributes(new Criteria(array(
+              'workorder_id' => $workorder->id,
+              'checklist_row_id' => $row->id
+            )));
+            $json_workorders[$appointment->id]['checklist_value']['checklist-'.$checklist->checklist_id.'-'.$row->id] = (bool)$value;
+          }
+        }
+
+        $resource = Resource::model()->findByAttributes(new Criteria(array('xid' => Registry::get('user_id'))));
+        $fields = Field::model()->findAllByAttributes(new Criteria(array('company_id' => $resource->company_id, 'active' => 1)));
+        foreach ($fields as $field) {
+          $key = $field->form == 'customer' ? 'extra_1_'.$field->id : 'extra_2_'.$field->id;
+          $value = FieldValue::model()->findByAttributes(new Criteria(array(
+            'company_id' => $resource->company_id,
+            'field_id' => $field->id,
+            'object_id' => $field->form == 'customer' ? ($customer ? $customer->id : 0) : $appointment->id
+          )));
+
+          $json_workorders[$appointment->id]['extra'][$key] = $value ? $value->value : '';
+        }
+
+
+        $orderrows = json_decode($workorder->orderrows, true);
+        $json_workorders[$appointment->id]['rows'] = array();
+        if ($orderrows) {
+          foreach ($orderrows as $orderrow) {
+           $tmp = array(
+              'type' => $orderrow['t'],
+              'desc' => $orderrow['d'],
+              'cost' => $orderrow['p'],
+              'amount' => $orderrow['c']
+            );
+            if ($orderrow['t'] == 'hours') {
+              $tmp['minutes'] = $orderrow['c'];
+            }
+            $json_workorders[$appointment->id]['rows'][] = $tmp;
+          }
+        }
+
+      }
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode(array(date('Y-m-d', strtotime($date)) => $json_workorders, 'username' => $resource->name, 'resource' => $resource->id, 'xid' => Registry::get('user_id')));
     exit;
   }
 

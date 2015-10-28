@@ -35,6 +35,7 @@ require('lib/model/FieldValue.php');
 require('lib/model/Category.php');
 require('lib/model/Product.php');
 require('lib/model/ProductCategory.php');
+require('lib/model/File.php');
 
 $db_config = Registry::get('connection');
 $db = new mysqli($db_config['server'], $db_config['username'], $db_config['password'], $db_config['database']);
